@@ -1,11 +1,10 @@
-
-# 🏗️ System & Project Architecture Structures
+# System & Project Architecture Structures
 
 Dokumen ini mendefinisikan struktur folder, pola arsitektur software, serta hirarki direktori untuk sistem e-Notaris BPRS.
 
 ---
 
-## 🎨 1. Frontend Structure (Vue 3 + Tailwind CSS)
+## Frontend Structure (Vue 3 + Tailwind CSS)
 
 Menggunakan **Composition API** (`<script setup>`) dengan pemisahan tegas antara komponen atomic/UI, layout, state (Pinia), dan API services.
 
@@ -38,12 +37,13 @@ frontend/
 └── package.json
 ```
 
+---
 
+## Backend Structure (Golang - Clean Architecture)
 
-⚙️ 2. Backend Structure (Golang - Clean Architecture)
-Menggunakan pola Clean / Hexagonal Architecture untuk memisahkan logika bisnis dari HTTP transport (Gin/Fiber) dan database driver (pgx/GORM).
+Meng_using pola Clean / Hexagonal Architecture untuk memisahkan logika bisnis dari HTTP transport (Gin/Fiber) dan database driver (pgx/GORM).
 
-Plaintext
+```text
 backend/
 ├── cmd/
 │   └── api/
@@ -78,27 +78,28 @@ backend/
 │       └── 000001_create_users_table.down.sql
 ├── go.mod
 └── go.sum
-🗄️ 3. Database Schema Structure (PostgreSQL)
-Ringkasan entitas tabel relasional dalam database bprs_enotary:
-
-Plaintext
-bprs_enotary (DB)
- ├── users                  (Staff BPRS, Legal Officers, Admins)
- ├── notaries               (Data Notaris/PPAT Rekanan & Wilayah Kerja)
- ├── financing_applications (Data Pembiayaan Sync dari CBS/LOS)
- ├── collaterals            (Objek Jaminan: SHM, SHGB, BPKB, Deposito)
- ├── legal_orders           (Order Legalitas & Status SLA Workflows)
- ├── legal_order_logs       (Audit Trail Waktu & Log Perubahan Status)
- └── legal_documents        (PDF Hash SHA-256, e-Meterai SN, e-Sign Status)
-Key DB Conventions:
-Primary Key: id BIGINT GENERATED ALWAYS AS IDENTITY atau UUIDv4.
-
-Timestamps: Selalu sertakan created_at TIMESTAMPTZ dan updated_at TIMESTAMPTZ (WIB UTC+7).
-
-Soft Deletes: deleted_at TIMESTAMPTZ NULL pada tabel master data.
-
-Foreign Keys: Dilengkapi klausul ON DELETE RESTRICT untuk integritas audit legal.
+```
 
 ---
 
-<Elicitations message="Semua 7 file markdown spesifikasi (.md) sudah lengkap! Mau langsung buatkan kode starter Go/Vue-nya?">    </Elicitations>
+## Database Schema Structure (PostgreSQL)
+
+Ringkasan entitas tabel relasional dalam database `bprs_enotary`:
+
+```text
+bprs_enotary (DB)
+├── users                  (Staff BPRS, Legal Officers, Admins)
+├── notaries               (Data Notaris/PPAT Rekanan & Wilayah Kerja)
+├── financing_applications (Data Pembiayaan Sync dari CBS/LOS)
+├── collaterals            (Objek Jaminan: SHM, SHGB, BPKB, Deposito)
+├── legal_orders           (Order Legalitas & Status SLA Workflows)
+├── legal_order_logs       (Audit Trail Waktu & Log Perubahan Status)
+└── legal_documents        (PDF Hash SHA-256, e-Meterai SN, e-Sign Status)
+```
+
+**Key DB Conventions:**
+
+- **Primary Key:** `id BIGINT GENERATED ALWAYS AS IDENTITY` atau `UUIDv4`.
+- **Timestamps:** Selalu sertakan `created_at TIMESTAMPTZ` dan `updated_at TIMESTAMPTZ` (WIB UTC+7).
+- **Soft Deletes:** `deleted_at TIMESTAMPTZ NULL` pada tabel master data.
+- **Foreign Keys:** Dilengkapi klausul `ON DELETE RESTRICT` untuk integritas audit legal.

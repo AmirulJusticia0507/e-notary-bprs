@@ -1,11 +1,10 @@
-
-# 📊 Table Specifications (Vue 3 + Tailwind)
+# Table Specifications (Vue 3 + Tailwind)
 
 ## Pattern Standard
 
-* High-density layout dengan sticky header.
-* Truncate text untuk kolom panjang + tooltip.
-* State Badge menggunakan warna dinamis dari Tailwind.
+- High-density layout dengan sticky header.
+- Truncate text untuk kolom panjang + tooltip.
+- State Badge menggunakan warna dinamis dari Tailwind.
 
 ## Sample Vue 3 Component Structure (`LegalOrdersTable.vue`)
 
