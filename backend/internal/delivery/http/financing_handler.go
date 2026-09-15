@@ -1,9 +1,11 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/e-notary-bprs/backend/internal/domain"
+	"github.com/e-notary-bprs/backend/internal/repository"
 	"github.com/e-notary-bprs/backend/internal/usecase"
 	"github.com/e-notary-bprs/backend/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -48,7 +50,11 @@ func (h *FinancingHandler) GetByID(c *gin.Context) {
 	}
 	app, err := h.financingUsecase.GetByID(c.Request.Context(), id)
 	if err != nil {
-		response.Error(c, http.StatusNotFound, err.Error())
+		if errors.Is(err, repository.ErrNotFound) {
+			response.Error(c, http.StatusNotFound, err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	response.JSON(c, http.StatusOK, app)

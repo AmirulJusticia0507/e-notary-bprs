@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"errors"
 
 	"github.com/e-notary-bprs/backend/internal/config"
 	"github.com/e-notary-bprs/backend/internal/usecase"
@@ -33,6 +34,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 	if err := h.authUsecase.Register(c.Request.Context(), req.FullName, req.Email, req.Password, req.Role); err != nil {
+		if errors.Is(err, usecase.ErrInvalidRole) {
+			response.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}

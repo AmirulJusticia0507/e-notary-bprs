@@ -63,23 +63,23 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 		// Financing Applications
 		protected.POST("/financings", financingHandler.Create)
 		protected.GET("/financings", financingHandler.List)
-		protected.GET("/financings/:id", financingHandler.GetByID)
 		protected.POST("/financings/sync", financingHandler.SyncFromCBS)
+		protected.GET("/financings/:id", financingHandler.GetByID)
 
 		// Legal Orders
 		protected.POST("/orders", orderHandler.Create)
 		protected.GET("/orders", orderHandler.List)
-		protected.GET("/orders/:id", orderHandler.GetByID)
 		protected.GET("/orders/notary/:notaryID", orderHandler.ListByNotary)
 		protected.GET("/orders/assigned/:assignedTo", orderHandler.ListByAssignedTo)
 		protected.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
 		protected.GET("/orders/:id/logs", orderHandler.GetLogs)
+		protected.GET("/orders/:id", orderHandler.GetByID)
 
 		// Legal Documents
 		protected.POST("/documents", docHandler.Create)
 		protected.GET("/documents/order/:orderID", docHandler.ListByOrderID)
-		protected.GET("/documents/:id", docHandler.GetByID)
 		protected.PATCH("/documents/:id/sign", docHandler.UpdateESignStatus)
+		protected.GET("/documents/:id", docHandler.GetByID)
 	}
 
 	return r

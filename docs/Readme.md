@@ -22,7 +22,7 @@ createdb -U postgres bprs_enotary
 migrate -path db/migrations -database "postgres://postgres:postgres@localhost:5432/bprs_enotary?sslmode=disable" up
 ```
 
-Migrasi: `db/migrations/000001_create_users_notaries` → `000002_create_financing_collateral` → `000003_create_legal_orders_documents` → `000004_seed_dev` (seed dev idempotent).
+Migrasi: `db/migrations/000001_create_users_notaries` → `000002_create_financing_collateral` → `000003_create_legal_orders_documents` → `000004_seed_dev` → `000005_add_financing_nik_unique` (sinkronisasi CBS memerlukan NIK unik).
 Detail & troubleshooting: [SETUP.md](SETUP.md).
 
 ### 2. Backend (Go)

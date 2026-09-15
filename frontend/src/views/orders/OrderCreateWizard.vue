@@ -46,6 +46,14 @@ async function submit() {
 <template>
   <div class="mx-auto max-w-2xl space-y-5">
     <h2 class="text-lg font-bold text-slate-900">Order Baru</h2>
+    <div class="flex items-center justify-between mb-2 text-xs text-slate-500">
+      <span v-if="step >= 1" class="font-medium text-slate-500">Langkah 1 dari 3</span>
+      <span v-else class="font-medium text-slate-400">Langkah 1 dari 3</span>
+      <span v-if="step >= 2" class="font-medium text-slate-500 separator">/</span>
+      <span v-else class="font-medium text-slate-400 separator">/</span>
+      <span v-if="step >= 3" class="font-medium text-slate-500">Langkah 3 dari 3</span>
+      <span v-else class="font-medium text-slate-400">Langkah 3 dari 3</span>
+    </div>
     <ol class="flex gap-2 text-xs font-semibold">
       <li v-for="n in 3" :key="n" class="flex-1 rounded-md px-3 py-2" :class="step >= n ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'">
         Langkah {{ n }}

@@ -89,14 +89,19 @@ func (h *LegalOrderHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Status    string `json:"status" binding:"required"`
-		ChangedBy int64  `json:"changed_by" binding:"required"`
+		Status string `json:"status" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := h.orderUsecase.UpdateStatus(c.Request.Context(), id, req.Status, req.ChangedBy); err != nil {
+	changedByValue, ok := c.Get("user_id")
+	changedBy, valid := changedByValue.(int64)
+	if !ok || !valid || changedBy == 0 {
+		response.Error(c, http.StatusUnauthorized, "user context is unavailable")
+		return
+	}
+	if err := h.orderUsecase.UpdateStatus(c.Request.Context(), id, req.Status, changedBy); err != nil {
 		switch err {
 		case usecase.ErrOrderNotFound:
 			response.Error(c, http.StatusNotFound, err.Error())

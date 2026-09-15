@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS financing_applications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_financing_status ON financing_applications (status) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_financing_nik ON financing_applications (customer_nik);
 
 CREATE TABLE IF NOT EXISTS collaterals (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

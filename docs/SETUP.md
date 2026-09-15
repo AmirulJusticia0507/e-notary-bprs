@@ -21,7 +21,7 @@ Panduan menjalankan backend Go, database PostgreSQL (migrasi), dan frontend seca
 │   ├── internal/...         # domain, repository/postgres, usecase, delivery/http (Gin)
 │   ├── pkg/...              # auth (JWT+bcrypt), response (gin), db, hash, pdf, esign, emeterai
 │   └── .env.example         # contoh env backend
-├── db/migrations/           # 000001..000003 *.up.sql / *.down.sql
+├── db/migrations/           # 000001..000005 *.up.sql / *.down.sql
 ├── docs/                    # spesifikasi + panduan ini
 └── .env.example             # contoh env root
 ```
@@ -49,6 +49,7 @@ Urutan migrasi:
 | `000002_create_financing_collateral` | `financing_applications`, `collaterals` + index |
 | `000003_create_legal_orders_documents` | `legal_orders`, `legal_order_logs`, `legal_documents` + index |
 | `000004_seed_dev` | seed dev idempotent: admin `admin@bprs.local` / `admin123`, 1 notaris contoh |
+| `000005_add_financing_nik_unique` | unique index untuk `financing_applications.customer_nik` agar upsert CBS aman |
 
 Konvensi DB: PK `BIGINT GENERATED ALWAYS AS IDENTITY`, `created_at/updated_at TIMESTAMPTZ DEFAULT NOW()`,
 soft-delete `deleted_at NULL`, FK `ON DELETE RESTRICT` (kecuali `legal_order_logs.order_id → CASCADE`).

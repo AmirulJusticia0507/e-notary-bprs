@@ -14,6 +14,7 @@ var (
 	ErrOrderNotFound = errors.New("legal order not found")
 	ErrInvalidStatus = errors.New("invalid status transition")
 	ErrSLAOverdue    = errors.New("SLA deadline exceeded")
+	ErrInvalidRole   = errors.New("invalid user role")
 )
 
 type AuthUcase struct {
@@ -27,6 +28,9 @@ func NewAuthUcase(userRepo repository.UserRepository) *AuthUcase {
 func (u *AuthUcase) Register(ctx context.Context, fullName, email, password, role string) error {
 	if role == "" {
 		role = "legal_officer"
+	}
+	if role != "legal_officer" && role != "admin" && role != "notary" {
+		return ErrInvalidRole
 	}
 	hash, err := auth.HashPassword(password)
 	if err != nil {

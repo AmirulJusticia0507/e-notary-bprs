@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS uq_financing_applications_customer_nik;
