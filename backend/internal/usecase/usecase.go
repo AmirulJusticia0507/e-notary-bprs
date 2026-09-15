@@ -149,7 +149,7 @@ func (u *LegalOrderUcase) UpdateStatus(ctx context.Context, orderID int64, newSt
 	if time.Now().After(detail.SLADeadline) && newStatus != "completed" {
 		return ErrSLAOverdue
 	}
-	return u.orderRepo.UpdateStatus(ctx, orderID, newStatus, changedBy)
+	return u.orderRepo.UpdateStatus(ctx, orderID, detail.Status, newStatus, changedBy)
 }
 
 func (u *LegalOrderUcase) GetLogs(ctx context.Context, orderID int64) ([]domain.LegalOrderLog, error) {

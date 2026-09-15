@@ -43,7 +43,7 @@ type LegalOrderRepository interface {
 	FindByID(ctx context.Context, id int64) (*domain.OrderDetail, error)
 	FindByNotaryID(ctx context.Context, notaryID int64) ([]domain.OrderDetail, error)
 	FindByAssignedTo(ctx context.Context, assignedTo int64) ([]domain.OrderDetail, error)
-	UpdateStatus(ctx context.Context, orderID int64, newStatus string, changedBy int64) error
+	UpdateStatus(ctx context.Context, orderID int64, previousStatus, newStatus string, changedBy int64) error
 }
 
 type LegalOrderLogRepository interface {

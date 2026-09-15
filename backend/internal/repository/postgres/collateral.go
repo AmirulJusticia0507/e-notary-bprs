@@ -3,11 +3,9 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/e-notary-bprs/backend/internal/domain"
-	"github.com/e-notary-bprs/backend/internal/repository"
 )
 
 type CollateralRepository struct{ db *sql.DB }
@@ -37,8 +35,4 @@ func (r *CollateralRepository) FindByFinancingID(ctx context.Context, financingI
 		collaterals = append(collaterals, collateral)
 	}
 	return collaterals, rows.Err()
-}
-
-func (r *CollateralRepository) unused() {
-	_, _, _ = sql.ErrNoRows, fmt.Sprintf, repository.ErrNotFound
 }

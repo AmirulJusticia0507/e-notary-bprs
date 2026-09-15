@@ -86,19 +86,16 @@ func (r *LegalOrderRepository) queryOrderDetails(ctx context.Context, q string, 
 	return orders, rows.Err()
 }
 
-func (r *LegalOrderRepository) UpdateStatus(ctx context.Context, orderID int64, newStatus string, changedBy int64) error {
+func (r *LegalOrderRepository) UpdateStatus(ctx context.Context, orderID int64, previousStatus, newStatus string, changedBy int64) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	now := time.Now()
-	var prevStatus string
-	if err := tx.QueryRowContext(ctx, `SELECT status FROM legal_orders WHERE id = $1`, orderID).Scan(&prevStatus); err != nil {
-		return err
-	}
 	result, err := tx.ExecContext(ctx, `UPDATE legal_orders SET status = $1, updated_at = $2,
-		completed_at = CASE WHEN $1 = 'completed' THEN $2 ELSE completed_at END WHERE id = $3`, newStatus, now, orderID)
+		completed_at = CASE WHEN $1 = 'completed' THEN $2 ELSE completed_at END
+		WHERE id = $3 AND status = $4`, newStatus, now, orderID, previousStatus)
 	if err != nil {
 		return err
 	}
@@ -107,10 +104,10 @@ func (r *LegalOrderRepository) UpdateStatus(ctx context.Context, orderID int64, 
 		return err
 	}
 	if affected == 0 {
-		return fmt.Errorf("legal order not found: %w", repository.ErrNotFound)
+		return fmt.Errorf("legal order not found or status changed: %w", repository.ErrNotFound)
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO legal_order_logs (order_id, prev_status, new_status, changed_by, created_at)
-		VALUES ($1, $2, $3, $4, $5)`, orderID, prevStatus, newStatus, changedBy, now)
+		VALUES ($1, $2, $3, $4, $5)`, orderID, previousStatus, newStatus, changedBy, now)
 	if err != nil {
 		return err
 	}

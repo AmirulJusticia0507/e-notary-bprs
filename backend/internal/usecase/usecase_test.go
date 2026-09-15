@@ -41,9 +41,12 @@ func (s *stubOrderRepo) FindByAssignedTo(_ context.Context, _ int64) ([]domain.O
 	return s.orders, nil
 }
 
-func (s *stubOrderRepo) UpdateStatus(_ context.Context, orderID int64, newStatus string, _ int64) error {
+func (s *stubOrderRepo) UpdateStatus(_ context.Context, orderID int64, previousStatus, newStatus string, _ int64) error {
 	if s.status == nil {
 		s.status = map[int64]string{}
+	}
+	if s.detail != nil && previousStatus != s.detail.Status {
+		return repository.ErrNotFound
 	}
 	s.status[orderID] = newStatus
 	return nil
