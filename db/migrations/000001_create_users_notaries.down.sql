@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS notaries;
+DROP TABLE IF EXISTS users;

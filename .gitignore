@@ -1,0 +1,28 @@
+# Binaries & build output
+*.exe
+*.out
+/bin/
+/dist/
+e-notary-api
+
+# Go
+*.test
+/vendor/
+
+# Env (jangan commit secret asli)
+.env
+!.env.example
+backend/.env
+!backend/.env.example
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# OS & editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
