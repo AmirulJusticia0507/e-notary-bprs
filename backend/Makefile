@@ -3,7 +3,7 @@
 DB_URL ?= postgres://postgres:postgres@localhost:5432/bprs_enotary?sslmode=disable
 
 fmt:
-	gofmt -l .
+	gofmt -w .
 
 vet:
 	go vet ./...

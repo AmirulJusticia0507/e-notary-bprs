@@ -1,9 +1,11 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/e-notary-bprs/backend/internal/domain"
+	"github.com/e-notary-bprs/backend/internal/repository"
 	"github.com/e-notary-bprs/backend/internal/usecase"
 	"github.com/e-notary-bprs/backend/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -53,7 +55,11 @@ func (h *LegalDocumentHandler) GetByID(c *gin.Context) {
 	}
 	doc, err := h.docUsecase.GetByID(c.Request.Context(), id)
 	if err != nil {
-		response.Error(c, http.StatusNotFound, err.Error())
+		if errors.Is(err, repository.ErrNotFound) {
+			response.Error(c, http.StatusNotFound, err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	response.JSON(c, http.StatusOK, doc)
@@ -73,6 +79,10 @@ func (h *LegalDocumentHandler) UpdateESignStatus(c *gin.Context) {
 		return
 	}
 	if err := h.docUsecase.UpdateESignStatus(c.Request.Context(), id, req.Status); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			response.Error(c, http.StatusNotFound, err.Error())
+			return
+		}
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}

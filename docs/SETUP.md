@@ -67,7 +67,7 @@ Variabel env (lihat `internal/config/config.go`):
 
 | Key | Default | Keterangan |
 | --- | ------- | ---------- |
-| `DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME/DB_SSLMODE` | `localhost/5432/postgres/postgres/bprs_enotary/disable` | koneksi pgx stdlib (`sql.Open("pgx", cfg.DSN())`) |
+| `DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME/DB_SSLMODE` | `localhost/5432/postgres/postgres/bprs_enotary/disable` | koneksi pgx stdlib (`pkg/db.Open(cfg.Database)`) |
 | `SERVER_HOST/SERVER_PORT` | `0.0.0.0/8080` | listen address |
 | `JWT_SECRET/JWT_EXPIRY` | `e-notary-bprs-secret-key/24h` | HS256, durasi `time.ParseDuration` |
 

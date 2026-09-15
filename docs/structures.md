@@ -41,43 +41,70 @@ frontend/
 
 ## Backend Structure (Golang - Clean Architecture)
 
-Meng_using pola Clean / Hexagonal Architecture untuk memisahkan logika bisnis dari HTTP transport (Gin/Fiber) dan database driver (pgx/GORM).
+Menggunakan pola Clean / Hexagonal Architecture untuk memisahkan logika bisnis dari HTTP transport (Gin) dan database driver (pgx).
 
 ```text
 backend/
 ├── cmd/
 │   └── api/
 │       └── main.go          # Entry point aplikasi Go
-├── config/                  # Environment variables & database config (Viper/godotenv)
 ├── internal/
-│   ├── delivery/
-│   │   └── http/            # Transport Layer (Gin Handlers & Route Setup)
-│   │       ├── middleware/  # JWT Auth, CORS, Request Logger
-│   │       ├── auth_handler.go
-│   │       ├── notary_handler.go
-│   │       └── order_handler.go
-│   ├── domain/              # Core Domain Entities & Interfaces (Pure Go Structs)
-│   │   ├── notary.go
-│   │   ├── order.go
-│   │   └── document.go
+│   ├── config/              # Environment variables & database config (godotenv)
+│   ├── domain/              # Core Domain Entities (Pure Go Structs)
+│   │   └── entities.go
 │   ├── repository/          # Data Access Layer (PostgreSQL Queries & Transactions)
-│   │   ├── postgres/
-│   │   │   ├── notary_repository.go
-│   │   │   └── order_repository.go
-│   │   └── interfaces.go
-│   └── usecase/             # Business Logic Layer (SLA Rules, Auto-drafting, Verification)
-│       ├── notary_usecase.go
-│       └── order_usecase.go
+│   │   ├── interfaces.go
+│   │   └── postgres/
+│   │       ├── user.go
+│   │       ├── notary.go
+│   │       ├── financing.go
+│   │       ├── collateral.go
+│   │       ├── legal_order.go
+│   │       ├── legal_order_log.go
+│   │       └── legal_document.go
+│   ├── usecase/             # Business Logic Layer (SLA Rules, Auto-drafting, Verification)
+│   │   └── usecase.go
+│   └── delivery/
+│       └── http/            # Transport Layer (Gin Handlers & Route Setup)
+│           ├── middleware/  # JWT Auth
+│           ├── auth_handler.go
+│           ├── notary_handler.go
+│           ├── financing_handler.go
+│           ├── order_handler.go
+│           ├── document_handler.go
+│           └── utils.go
 ├── pkg/                     # Utility / Shared Helpers
+│   ├── auth/                # JWT & bcrypt
+│   ├── hash/                # SHA-256
+│   ├── db/                  # Database connection (pgx)
 │   ├── pdf/                 # PDF generator & hash calculator (SHA-256)
 │   ├── esign/               # Integration Client (Privy / PERURI API)
+│   ├── emeterai/            # Integration Client (PERURI e-Meterai)
 │   └── response/            # Standard JSON Response Wrappers
-├── db/
-│   └── migrations/          # SQL Migration Files (golang-migrate)
-│       ├── 000001_create_users_table.up.sql
-│       └── 000001_create_users_table.down.sql
+├── cmd/api/main.go          # Entry point (duplicate for clarity)
 ├── go.mod
 └── go.sum
+```
+
+---
+
+## Database Migrations (golang-migrate)
+
+Migrations live at the repository root:
+
+```
+db/
+└── migrations/
+    ├── 000001_create_users_notaries.up.sql
+    ├── 000001_create_users_notaries.down.sql
+    ├── 000002_create_financing_collateral.up.sql
+    ├── 000002_create_financing_collateral.down.sql
+    ├── 000003_create_legal_orders_documents.up.sql
+    ├── 000003_create_legal_orders_documents.down.sql
+    ├── 000004_seed_dev.up.sql
+    ├── 000004_seed_dev.down.sql
+    ├── 000005_add_financing_nik_unique.up.sql
+    └── 000005_add_financing_nik_unique.down.sql
 ```
 
 ---

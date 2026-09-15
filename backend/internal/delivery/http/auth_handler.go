@@ -1,8 +1,8 @@
 package http
 
 import (
-	"net/http"
 	"errors"
+	"net/http"
 
 	"github.com/e-notary-bprs/backend/internal/config"
 	"github.com/e-notary-bprs/backend/internal/usecase"

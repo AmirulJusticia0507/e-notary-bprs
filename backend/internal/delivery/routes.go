@@ -18,7 +18,7 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}))
 
 	// Inisialisasi repositories.

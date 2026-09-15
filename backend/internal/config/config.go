@@ -23,6 +23,7 @@ type DatabaseConfig struct {
 	Password string
 	Name     string
 	SSLMode  string
+	DBURL    string
 }
 
 type ServerConfig struct {
@@ -46,6 +47,7 @@ func Load() (*Config, error) {
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			Name:     getEnv("DB_NAME", "bprs_enotary"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			DBURL:    getEnv("DATABASE_URL", ""),
 		},
 		Server: ServerConfig{
 			Host: getEnv("SERVER_HOST", "0.0.0.0"),
@@ -61,6 +63,9 @@ func Load() (*Config, error) {
 
 // DSN mengembalikan PostgreSQL connection string.
 func (c *DatabaseConfig) DSN() string {
+	if c.DBURL != "" {
+		return c.DBURL
+	}
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		c.User, c.Password, c.Host, c.Port, c.Name, c.SSLMode,
 	)
