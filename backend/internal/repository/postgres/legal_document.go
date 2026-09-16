@@ -70,6 +70,21 @@ func (r *LegalDocumentRepository) UpdateESignStatus(ctx context.Context, docID i
 	return nil
 }
 
+func (r *LegalDocumentRepository) UpdateMeteraiSN(ctx context.Context, docID int64, meteraiSN string) error {
+	result, err := r.db.ExecContext(ctx, `UPDATE legal_documents SET e_meterai_sn = $1, updated_at = $2 WHERE id = $3`, meteraiSN, time.Now(), docID)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("legal document not found: %w", repository.ErrNotFound)
+	}
+	return nil
+}
+
 func (r *LegalDocumentRepository) UpdateProcessingStatus(ctx context.Context, docID int64, status string, actNumber string, notaryFee int64, processedAt time.Time) error {
 	result, err := r.db.ExecContext(ctx, `UPDATE legal_documents SET processing_status = $1, act_number = $2, notary_fee = $3, notary_processed_at = $4, updated_at = $5 WHERE id = $6`, status, actNumber, notaryFee, processedAt, time.Now(), docID)
 	if err != nil {

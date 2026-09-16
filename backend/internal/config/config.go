@@ -17,6 +17,8 @@ type Config struct {
 	CBS          CBSConfig
 	BPN          BPNConfig
 	Pegadaian    PegadaianConfig
+	EMeterai     EMeteraiConfig
+	ESign        ESignConfig
 }
 
 type CBSConfig struct {
@@ -35,6 +37,16 @@ type PegadaianConfig struct {
 	BaseURL     string
 	APIKey      string
 	PartnerCode string
+}
+
+type EMeteraiConfig struct {
+	BaseURL string
+	APIKey  string
+}
+
+type ESignConfig struct {
+	BaseURL string
+	APIKey  string
 }
 
 type DatabaseConfig struct {
@@ -92,6 +104,14 @@ func Load() (*Config, error) {
 			BaseURL:     getEnv("PEGADAIAN_BASE_URL", ""),
 			APIKey:      getEnv("PEGADAIAN_API_KEY", ""),
 			PartnerCode: getEnv("PEGADAIAN_PARTNER_CODE", ""),
+		},
+		EMeterai: EMeteraiConfig{
+			BaseURL: getEnv("EMETERAI_BASE_URL", ""),
+			APIKey:  getEnv("EMETERAI_API_KEY", ""),
+		},
+		ESign: ESignConfig{
+			BaseURL: getEnv("ESIGN_BASE_URL", ""),
+			APIKey:  getEnv("ESIGN_API_KEY", ""),
 		},
 	}
 	return cfg, nil

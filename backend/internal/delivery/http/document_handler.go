@@ -121,3 +121,54 @@ func (h *LegalDocumentHandler) UpdateProcessingStatus(c *gin.Context) {
 	}
 	response.JSON(c, http.StatusOK, gin.H{"message": "processing status updated"})
 }
+
+func (h *LegalDocumentHandler) StampMeterai(c *gin.Context) {
+	id, err := parseID(c)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var req struct {
+		Purchaser string `json:"purchaser" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := h.docUsecase.StampMeterai(c.Request.Context(), id, req.Purchaser)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			response.Error(c, http.StatusNotFound, err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, resp)
+}
+
+func (h *LegalDocumentHandler) RequestSign(c *gin.Context) {
+	id, err := parseID(c)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var req struct {
+		SignerName  string `json:"signer_name" binding:"required"`
+		SignerEmail string `json:"signer_email" binding:"required,email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := h.docUsecase.RequestSign(c.Request.Context(), id, req.SignerName, req.SignerEmail)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			response.Error(c, http.StatusNotFound, err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, resp)
+}

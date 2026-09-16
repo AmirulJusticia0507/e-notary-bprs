@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/e-notary-bprs/backend/internal/domain"
@@ -11,6 +12,8 @@ import (
 	cbs "github.com/e-notary-bprs/backend/pkg/cbs"
 	bpn "github.com/e-notary-bprs/backend/pkg/bpn"
 	pegadaian "github.com/e-notary-bprs/backend/pkg/pegadaian"
+	emeterai "github.com/e-notary-bprs/backend/pkg/emeterai"
+	esign "github.com/e-notary-bprs/backend/pkg/esign"
 )
 
 var (
@@ -222,11 +225,13 @@ func isValidTransition(from, to string) bool {
 }
 
 type LegalDocumentUcase struct {
-	docRepo repository.LegalDocumentRepository
+	docRepo        repository.LegalDocumentRepository
+	emeteraiClient *emeterai.Client
+	esignClient    *esign.Client
 }
 
-func NewLegalDocumentUcase(docRepo repository.LegalDocumentRepository) *LegalDocumentUcase {
-	return &LegalDocumentUcase{docRepo: docRepo}
+func NewLegalDocumentUcase(docRepo repository.LegalDocumentRepository, emeteraiClient *emeterai.Client, esignClient *esign.Client) *LegalDocumentUcase {
+	return &LegalDocumentUcase{docRepo: docRepo, emeteraiClient: emeteraiClient, esignClient: esignClient}
 }
 
 func (u *LegalDocumentUcase) Create(ctx context.Context, document *domain.LegalDocument) error {
@@ -247,4 +252,53 @@ func (u *LegalDocumentUcase) UpdateESignStatus(ctx context.Context, docID int64,
 
 func (u *LegalDocumentUcase) UpdateProcessingStatus(ctx context.Context, docID int64, status string, actNumber string, notaryFee int64, processedAt time.Time) error {
 	return u.docRepo.UpdateProcessingStatus(ctx, docID, status, actNumber, notaryFee, processedAt)
+}
+
+// StampMeterai membeli e-Meterai ke distributor resmi lalu menyimpan SN-nya ke dokumen.
+func (u *LegalDocumentUcase) StampMeterai(ctx context.Context, docID int64, purchaser string) (*emeterai.PurchaseResponse, error) {
+	if u.emeteraiClient == nil || !u.emeteraiClient.IsConfigured() {
+		return nil, errors.New("e-Meterai provider is not configured (isi EMETERAI_BASE_URL dan EMETERAI_API_KEY)")
+	}
+	doc, err := u.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := u.emeteraiClient.Purchase(ctx, emeterai.PurchaseRequest{
+		DocumentID: doc.FileURL,
+		Purchaser:  purchaser,
+		Amount:     1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err := u.docRepo.UpdateMeteraiSN(ctx, docID, resp.MeteraiSN); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// RequestSign mengajukan TTE tersertifikasi ke PSrE lalu menandai status e-sign dokumen.
+func (u *LegalDocumentUcase) RequestSign(ctx context.Context, docID int64, signerName, signerEmail string) (*esign.SignResponse, error) {
+	if u.esignClient == nil || !u.esignClient.IsConfigured() {
+		return nil, errors.New("e-Sign provider is not configured (isi ESIGN_BASE_URL dan ESIGN_API_KEY)")
+	}
+	if _, err := u.docRepo.FindByID(ctx, docID); err != nil {
+		return nil, err
+	}
+	resp, err := u.esignClient.Sign(ctx, esign.SignRequest{
+		DocumentID:  strconv.FormatInt(docID, 10),
+		SignerName:  signerName,
+		SignerEmail: signerEmail,
+	})
+	if err != nil {
+		return nil, err
+	}
+	status := "signed"
+	if resp.Status != "" {
+		status = resp.Status
+	}
+	if err := u.docRepo.UpdateESignStatus(ctx, docID, status); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

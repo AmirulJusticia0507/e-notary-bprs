@@ -9,6 +9,8 @@ import (
 	"github.com/e-notary-bprs/backend/internal/usecase"
 	"github.com/e-notary-bprs/backend/pkg/bpn"
 	"github.com/e-notary-bprs/backend/pkg/cbs"
+	"github.com/e-notary-bprs/backend/pkg/emeterai"
+	"github.com/e-notary-bprs/backend/pkg/esign"
 	"github.com/e-notary-bprs/backend/pkg/pegadaian"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -40,7 +42,9 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	pegadaianClient := pegadaian.NewClient(cfg.Pegadaian.BaseURL, cfg.Pegadaian.APIKey, cfg.Pegadaian.PartnerCode)
 	financingUsecase := usecase.NewFinancingUcase(financingRepo, cbsClient, bpnClient, pegadaianClient)
 	orderUsecase := usecase.NewLegalOrderUcase(orderRepo, logRepo)
-	docUsecase := usecase.NewLegalDocumentUcase(docRepo)
+	emeteraiClient := emeterai.NewClient(cfg.EMeterai.BaseURL, cfg.EMeterai.APIKey)
+	esignClient := esign.NewClient(cfg.ESign.BaseURL, cfg.ESign.APIKey)
+	docUsecase := usecase.NewLegalDocumentUcase(docRepo, emeteraiClient, esignClient)
 
 	// Inisialisasi handlers.
 	authHandler := deliveryhttp.NewAuthHandler(authUsecase, &cfg.JWT)
@@ -100,6 +104,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	// Legal Documents: legal yang upload/sign, notaris update processing + semua boleh baca.
 	legalTeam.POST("/documents", docHandler.Create)
 	legalTeam.PATCH("/documents/:id/sign", docHandler.UpdateESignStatus)
+	legalTeam.POST("/documents/:id/stamp", docHandler.StampMeterai)
+	legalTeam.POST("/documents/:id/sign-request", docHandler.RequestSign)
 	allStaff.GET("/documents/order/:orderID", docHandler.ListByOrderID)
 	allStaff.PATCH("/documents/:id/processing", docHandler.UpdateProcessingStatus)
 	allStaff.GET("/documents/:id", docHandler.GetByID)
