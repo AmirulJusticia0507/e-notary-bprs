@@ -3,7 +3,10 @@ import AppLayout from '../layouts/AppLayout.vue'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
+import ForgotView from '../views/auth/ForgotView.vue'
+import ResetView from '../views/auth/ResetView.vue'
 import ForbiddenView from '../views/auth/ForbiddenView.vue'
+import ChangePasswordView from '../views/settings/ChangePasswordView.vue'
 import DashboardOverview from '../views/dashboard/DashboardOverview.vue'
 import OrderCreateWizard from '../views/orders/OrderCreateWizard.vue'
 import OrderDetailView from '../views/orders/OrderDetailView.vue'
@@ -15,9 +18,11 @@ import NasabahDashboard from '../views/nasabah/NasabahDashboard.vue'
 // - order-create: admin, legal_officer (notaris tidak boleh buat order,
 //   hanya update processing dokumen dari order yang ditugaskan ke mereka)
 // - saya (dashboard + pengajuan nasabah): nasabah saja
+// - password (ganti password mandiri): semua role yang login
 const STAFF = ['admin', 'legal_officer', 'notary']
 const LEGAL_TEAM = ['admin', 'legal_officer']
 const NASABAH = ['nasabah']
+const ALL_AUTHED = ['admin', 'legal_officer', 'notary', 'nasabah']
 
 export function homeFor(role) {
   return role === 'nasabah' ? 'nasabah-dashboard' : 'dashboard'
@@ -37,6 +42,18 @@ const routes = [
     children: [{ path: '', name: 'register', component: RegisterView }],
   },
   {
+    path: '/forgot-password',
+    component: AuthLayout,
+    meta: { guest: true },
+    children: [{ path: '', name: 'forgot-password', component: ForgotView }],
+  },
+  {
+    path: '/reset-password',
+    component: AuthLayout,
+    meta: { guest: true },
+    children: [{ path: '', name: 'reset-password', component: ResetView }],
+  },
+  {
     path: '/',
     component: AppLayout,
     meta: { requiresAuth: true },
@@ -47,6 +64,7 @@ const routes = [
       { path: 'orders/create', name: 'order-create', component: OrderCreateWizard, meta: { roles: LEGAL_TEAM } },
       { path: 'orders/:id', name: 'order-detail', component: OrderDetailView, props: true, meta: { roles: STAFF } },
       { path: 'saya', name: 'nasabah-dashboard', component: NasabahDashboard, meta: { roles: NASABAH } },
+      { path: 'password', name: 'change-password', component: ChangePasswordView, meta: { roles: ALL_AUTHED } },
       { path: '403', name: 'forbidden', component: ForbiddenView },
     ],
   },

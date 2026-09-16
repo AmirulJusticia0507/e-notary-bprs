@@ -16,8 +16,18 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (*domain.User, error)
 	List(ctx context.Context) ([]domain.User, error)
 	Update(ctx context.Context, user *domain.User) error
+	UpdatePassword(ctx context.Context, id int64, passwordHash string) error
 	RecordFailedLogin(ctx context.Context, id int64, attempts int, lockedUntil *time.Time) error
 	ResetLoginAttempts(ctx context.Context, id int64) error
+}
+
+type PasswordResetRepository interface {
+	Create(ctx context.Context, reset *domain.PasswordReset) error
+	FindValidByTokenHash(ctx context.Context, tokenHash string) (*domain.PasswordReset, error)
+	DeleteByID(ctx context.Context, id int64) error
+	DeleteExpired(ctx context.Context) error
+	ListPending(ctx context.Context) ([]domain.PasswordReset, error)
+	DeleteByUserID(ctx context.Context, userID int64) error
 }
 
 type NotaryRepository interface {

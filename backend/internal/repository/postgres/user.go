@@ -83,6 +83,23 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	return nil
 }
 
+// UpdatePassword mengganti hash password (dipakai reset/ganti password).
+func (r *UserRepository) UpdatePassword(ctx context.Context, id int64, passwordHash string) error {
+	const q = `UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3`
+	result, err := r.db.ExecContext(ctx, q, passwordHash, time.Now(), id)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("user not found: %w", repository.ErrNotFound)
+	}
+	return nil
+}
+
 // RecordFailedLogin mencatat gagal login beruntun dan waktu kunci (NULL bila belum dikunci).
 func (r *UserRepository) RecordFailedLogin(ctx context.Context, id int64, attempts int, lockedUntil *time.Time) error {
 	const q = `UPDATE users SET failed_login_attempts = $1, locked_until = $2, updated_at = $3 WHERE id = $4`

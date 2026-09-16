@@ -35,7 +35,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	docRepo := postgres.NewLegalDocumentRepository(db)
 
 	// Inisialisasi usecases.
-	authUsecase := usecase.NewAuthUcase(userRepo)
+	resetRepo := postgres.NewPasswordResetRepository(db)
+	authUsecase := usecase.NewAuthUcase(userRepo, resetRepo)
 	notaryUsecase := usecase.NewNotaryUcase(notaryRepo)
 	cbsClient := cbs.NewClient(cfg.CBS.BaseURL, cfg.CBS.APIKey, cfg.CBS.ClientCode)
 	bpnClient := bpn.NewClient(cfg.BPN.BaseURL, cfg.BPN.APIKey, cfg.BPN.SecretKey)
@@ -65,6 +66,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	})
 	v1.POST("/auth/register", authHandler.Register)
 	v1.POST("/auth/login", authHandler.Login)
+	v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
+	v1.POST("/auth/reset-password", authHandler.ResetPassword)
 
 	// Route terlindungi (wajib JWT).
 	authMiddleware := deliveryhttp.NewAuthMiddleware(&cfg.JWT)
@@ -83,6 +86,15 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 
 	allStaff := protected.Group("")
 	allStaff.Use(authMiddleware.RequireRole("admin", "legal_officer", "notary"))
+
+	// Auth mandiri: semua role yang login boleh ganti password sendiri.
+	allAuthed := protected.Group("")
+	allAuthed.Use(authMiddleware.RequireRole("admin", "legal_officer", "notary", "nasabah"))
+	allAuthed.PATCH("/auth/change-password", authHandler.ChangePassword)
+
+	// Admin: relay kode reset password ke user (via WA/telepon).
+	adminOnly.GET("/users/password-resets", authHandler.ListPendingResets)
+	adminOnly.POST("/users/:userID/reset-token", authHandler.AdminCreateResetToken)
 
 	// Notaries: master hanya admin yang ubah, semua role boleh lihat.
 	adminOnly.POST("/notaries", notaryHandler.Create)

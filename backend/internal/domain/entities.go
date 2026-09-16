@@ -16,6 +16,15 @@ type User struct {
 	DeletedAt           *time.Time `db:"deleted_at" json:"-"`
 }
 
+type PasswordReset struct {
+	ID        int64     `db:"id" json:"id"`
+	UserID    int64     `db:"user_id" json:"user_id"`
+	Email     string    `db:"email" json:"email,omitempty"`
+	TokenHash string    `db:"token_hash" json:"-"`
+	ExpiresAt time.Time `db:"expires_at" json:"expires_at"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+}
+
 type Notary struct {
 	ID           int64      `db:"id" json:"id"`
 	FullName     string     `db:"full_name" json:"full_name"`

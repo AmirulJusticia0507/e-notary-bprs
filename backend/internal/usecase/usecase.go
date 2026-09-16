@@ -2,6 +2,9 @@ package usecase
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -33,12 +36,16 @@ var (
 )
 
 type AuthUcase struct {
-	userRepo repository.UserRepository
+	userRepo  repository.UserRepository
+	resetRepo repository.PasswordResetRepository
 }
 
-func NewAuthUcase(userRepo repository.UserRepository) *AuthUcase {
-	return &AuthUcase{userRepo: userRepo}
+func NewAuthUcase(userRepo repository.UserRepository, resetRepo repository.PasswordResetRepository) *AuthUcase {
+	return &AuthUcase{userRepo: userRepo, resetRepo: resetRepo}
 }
+
+// ResetTokenTTL: masa berlaku kode reset password.
+const ResetTokenTTL = time.Hour
 
 func (u *AuthUcase) Register(ctx context.Context, fullName, email, password, role string) error {
 	if role == "" {
@@ -89,6 +96,108 @@ func (u *AuthUcase) Login(ctx context.Context, email, password string) (*domain.
 	}
 	_ = u.userRepo.ResetLoginAttempts(ctx, user.ID)
 	return user, nil
+}
+
+// newResetToken membuat token acak + hash SHA256-nya untuk disimpan.
+func newResetToken() (token, tokenHash string, err error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", "", err
+	}
+	token = hex.EncodeToString(raw)
+	sum := sha256.Sum256([]byte(token))
+	return token, hex.EncodeToString(sum[:]), nil
+}
+
+func hashResetToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// RequestPasswordReset membuat kode reset (berlaku 1 jam). Selalu sukses
+// tanpa membocorkan apakah email terdaftar (anti enumeration).
+func (u *AuthUcase) RequestPasswordReset(ctx context.Context, email string) error {
+	user, err := u.userRepo.FindByEmail(ctx, email)
+	if err != nil || !user.IsActive {
+		return nil
+	}
+	_ = u.resetRepo.DeleteByUserID(ctx, user.ID)
+	_, tokenHash, err := newResetToken()
+	if err != nil {
+		return err
+	}
+	_ = u.resetRepo.DeleteExpired(ctx)
+	return u.resetRepo.Create(ctx, &domain.PasswordReset{
+		UserID:    user.ID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().Add(ResetTokenTTL),
+	})
+}
+
+// AdminCreateResetToken menerbitkan kode reset baru untuk user dan
+// mengembalikan plaintext-nya SEKALI saja untuk di-relay admin ke user.
+func (u *AuthUcase) AdminCreateResetToken(ctx context.Context, userID int64) (string, error) {
+	if _, err := u.userRepo.FindByID(ctx, userID); err != nil {
+		return "", err
+	}
+	_ = u.resetRepo.DeleteByUserID(ctx, userID)
+	token, tokenHash, err := newResetToken()
+	if err != nil {
+		return "", err
+	}
+	if err := u.resetRepo.Create(ctx, &domain.PasswordReset{
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().Add(ResetTokenTTL),
+	}); err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+// ResetPassword menukar kode reset yang valid dengan password baru.
+func (u *AuthUcase) ResetPassword(ctx context.Context, token, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("password minimal 6 karakter")
+	}
+	reset, err := u.resetRepo.FindValidByTokenHash(ctx, hashResetToken(token))
+	if err != nil {
+		return errors.New("kode reset tidak valid atau kedaluwarsa")
+	}
+	hash, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	if err := u.userRepo.UpdatePassword(ctx, reset.UserID, hash); err != nil {
+		return err
+	}
+	_ = u.userRepo.ResetLoginAttempts(ctx, reset.UserID)
+	_ = u.resetRepo.DeleteByID(ctx, reset.ID)
+	return nil
+}
+
+// ChangePassword untuk user yang masih bisa login.
+func (u *AuthUcase) ChangePassword(ctx context.Context, userID int64, currentPassword, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("password minimal 6 karakter")
+	}
+	user, err := u.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !auth.CheckPassword(user.PasswordHash, currentPassword) {
+		return errors.New("password lama salah")
+	}
+	hash, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	return u.userRepo.UpdatePassword(ctx, userID, hash)
+}
+
+// ListPendingResets untuk relay admin (tanpa token, hanya siapa + expiry).
+func (u *AuthUcase) ListPendingResets(ctx context.Context) ([]domain.PasswordReset, error) {
+	return u.resetRepo.ListPending(ctx)
 }
 
 type NotaryUcase struct {

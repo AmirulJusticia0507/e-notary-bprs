@@ -11,6 +11,7 @@ const router = useRouter()
 const route = useRoute()
 const store = useUserStore()
 const justRegistered = route.query.registered === '1'
+const justReset = route.query.reset === '1'
 const { errors, required, isValidEmail } = useFormValidation()
 const form = reactive({ email: '', password: '' })
 const failed = ref('')
@@ -42,10 +43,14 @@ async function submit() {
     <FormInput v-model="form.email" label="Email" type="email" placeholder="nama@bprs.local" :error="errors.email" />
     <FormInput v-model="form.password" label="Password" type="password" placeholder="••••••••" :error="errors.password" />
     <p v-if="justRegistered" class="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-700">Pendaftaran berhasil, silakan masuk.</p>
+    <p v-if="justReset" class="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-700">Password berhasil direset, silakan masuk.</p>
     <CaptchaBox ref="captchaRef" v-model="captchaOk" />
     <p v-if="failed" class="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{{ failed }}</p>
     <AppButton type="submit" :loading="store.loading" :disabled="!captchaOk" class="w-full">Masuk</AppButton>
     <p v-if="isDev" class="text-center font-mono text-[11px] text-slate-400">dev: admin@bprs.local / password123</p>
+    <p class="text-center text-xs text-slate-500">
+      <router-link :to="{ name: 'forgot-password' }" class="font-semibold text-blue-600 hover:underline">Lupa password?</router-link>
+    </p>
     <p class="text-center text-xs text-slate-500">
       Belum punya akun?
       <router-link :to="{ name: 'register' }" class="font-semibold text-blue-600 hover:underline">Daftar sebagai nasabah</router-link>

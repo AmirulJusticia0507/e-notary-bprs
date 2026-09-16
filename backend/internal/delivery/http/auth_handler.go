@@ -21,7 +21,7 @@ func NewAuthHandler(authUsecase *usecase.AuthUcase, jwtCfg *config.JWTConfig) *A
 	return &AuthHandler{authUsecase: authUsecase, jwtCfg: jwtCfg}
 }
 
-// Register handles user registration.
+// Register adalah signup publik khusus nasabah (role selalu nasabah).
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req struct {
 		FullName string `json:"full_name" binding:"required"`
@@ -33,6 +33,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	req.Role = "nasabah"
 	if err := h.authUsecase.Register(c.Request.Context(), req.FullName, req.Email, req.Password, req.Role); err != nil {
 		if errors.Is(err, usecase.ErrInvalidRole) {
 			response.Error(c, http.StatusBadRequest, err.Error())
@@ -69,4 +70,87 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 	response.JSON(c, http.StatusOK, gin.H{"token": token, "user": gin.H{"id": user.ID, "email": user.Email, "role": user.Role}})
+}
+
+// ForgotPassword membuat kode reset (berlaku 1 jam). Selalu 200 agar
+// tidak membocorkan email mana yang terdaftar.
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.authUsecase.RequestPasswordReset(c.Request.Context(), req.Email); err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, gin.H{"message": "Jika email terdaftar, kode reset telah dibuat. Hubungi admin/CS BPRS untuk mendapatkan kode tersebut."})
+}
+
+// ResetPassword menukar kode reset dengan password baru.
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Token       string `json:"token" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.authUsecase.ResetPassword(c.Request.Context(), req.Token, req.NewPassword); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, gin.H{"message": "password berhasil direset, silakan masuk"})
+}
+
+// ChangePassword untuk user yang sedang login.
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userIDValue, ok := c.Get("user_id")
+	userID, valid := userIDValue.(int64)
+	if !ok || !valid || userID == 0 {
+		response.Error(c, http.StatusUnauthorized, "user context is unavailable")
+		return
+	}
+	var req struct {
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.authUsecase.ChangePassword(c.Request.Context(), userID, req.CurrentPassword, req.NewPassword); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, gin.H{"message": "password berhasil diganti"})
+}
+
+// ListPendingResets (admin): daftar permintaan reset untuk di-relay ke user.
+func (h *AuthHandler) ListPendingResets(c *gin.Context) {
+	resets, err := h.authUsecase.ListPendingResets(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, resets)
+}
+
+// AdminCreateResetToken (admin): terbitkan kode reset untuk user, plaintext
+// dikembalikan SEKALI untuk di-relay (mis. via WA) ke user bersangkutan.
+func (h *AuthHandler) AdminCreateResetToken(c *gin.Context) {
+	userID, err := parseIDParam(c, "userID")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+	token, err := h.authUsecase.AdminCreateResetToken(c.Request.Context(), userID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, gin.H{"reset_token": token, "expires_in": "1h"})
 }
