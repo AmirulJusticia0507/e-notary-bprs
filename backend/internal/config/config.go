@@ -11,15 +11,15 @@ import (
 
 // Config berisi semua konfigurasi aplikasi.
 type Config struct {
-	Database     DatabaseConfig
-	Server       ServerConfig
-	JWT          JWTConfig
-	CBS          CBSConfig
-	BPN          BPNConfig
-	Pegadaian    PegadaianConfig
-	EMeterai     EMeteraiConfig
-	ESign        ESignConfig
-	Keycloak     KeycloakConfig
+	Database  DatabaseConfig
+	Server    ServerConfig
+	JWT       JWTConfig
+	CBS       CBSConfig
+	BPN       BPNConfig
+	Pegadaian PegadaianConfig
+	EMeterai  EMeteraiConfig
+	ESign     ESignConfig
+	Keycloak  KeycloakConfig
 }
 
 type CBSConfig struct {
@@ -29,9 +29,9 @@ type CBSConfig struct {
 }
 
 type BPNConfig struct {
-	BaseURL    string
-	APIKey     string
-	SecretKey  string
+	BaseURL   string
+	APIKey    string
+	SecretKey string
 }
 
 type PegadaianConfig struct {
@@ -51,12 +51,12 @@ type ESignConfig struct {
 }
 
 type KeycloakConfig struct {
-	Issuer      string
-	InternalURL string
-	ClientID    string
+	Issuer       string
+	InternalURL  string
+	ClientID     string
 	ClientSecret string
-	RedirectURL string
-	FrontendURL string
+	RedirectURL  string
+	FrontendURL  string
 }
 
 // Enabled true bila SSO Keycloak dikonfigurasi.
@@ -111,9 +111,9 @@ func Load() (*Config, error) {
 			ClientCode: getEnv("CBS_CLIENT_CODE", ""),
 		},
 		BPN: BPNConfig{
-			BaseURL:    getEnv("BPN_BASE_URL", ""),
-			APIKey:     getEnv("BPN_API_KEY", ""),
-			SecretKey:  getEnv("BPN_SECRET_KEY", ""),
+			BaseURL:   getEnv("BPN_BASE_URL", ""),
+			APIKey:    getEnv("BPN_API_KEY", ""),
+			SecretKey: getEnv("BPN_SECRET_KEY", ""),
 		},
 		Pegadaian: PegadaianConfig{
 			BaseURL:     getEnv("PEGADAIAN_BASE_URL", ""),

@@ -75,11 +75,13 @@ Variabel env (lihat `internal/config/config.go`):
 
 ## 5. Deployment Vercel backend
 
-Proyek Vercel untuk API harus menggunakan **Root Directory** `backend` dan framework preset **Go**. Tambahkan environment variable berikut di Vercel:
+Proyek Vercel untuk API harus menggunakan **Root Directory** `backend`. Konfigurasi [`backend/vercel.json`](../backend/vercel.json) memaksa framework preset **Go** dan membangun binary dari `cmd/api/main.go`.
 
-- `DATABASE_URL` atau `POSTGRES_URL`: DSN PostgreSQL cloud, misalnya dari Neon/Vercel Postgres.
+Tambahkan environment variable berikut di Vercel:
+
+- `DATABASE_URL` atau `POSTGRES_URL`: DSN PostgreSQL cloud, misalnya dari Neon/Vercel Postgres. Variabel ini mengambil prioritas atas konfigurasi `DB_*`.
 - `JWT_SECRET`: secret minimal 32 karakter.
-- `PORT` tidak perlu diisi; Vercel menetapkannya otomatis.
+- `PORT` tidak perlu diisi; Vercel menetapkannya otomatis dan server membacanya sebelum `SERVER_PORT`.
 
 Jangan gunakan `localhost` untuk database di Vercel. Jalankan migration terhadap database cloud sebelum deployment, lalu redeploy setelah environment variable tersedia.
 
