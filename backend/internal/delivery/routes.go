@@ -53,8 +53,16 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	orderHandler := deliveryhttp.NewLegalOrderHandler(orderUsecase)
 	docHandler := deliveryhttp.NewLegalDocumentHandler(docUsecase)
 
+	// Health check publik (tanpa auth) agar root URL tidak 404.
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok", "service": "e-notary-bprs-api"})
+	})
+
 	v1 := r.Group("/api/v1")
 	// Route publik.
+	v1.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok", "service": "e-notary-bprs-api"})
+	})
 	v1.POST("/auth/register", authHandler.Register)
 	v1.POST("/auth/login", authHandler.Login)
 
