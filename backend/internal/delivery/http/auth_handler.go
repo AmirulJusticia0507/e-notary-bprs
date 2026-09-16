@@ -3,6 +3,8 @@ package http
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/e-notary-bprs/backend/internal/config"
 	"github.com/e-notary-bprs/backend/internal/usecase"
@@ -15,10 +17,14 @@ import (
 type AuthHandler struct {
 	authUsecase *usecase.AuthUcase
 	jwtCfg      *config.JWTConfig
+	frontendURL string
 }
 
-func NewAuthHandler(authUsecase *usecase.AuthUcase, jwtCfg *config.JWTConfig) *AuthHandler {
-	return &AuthHandler{authUsecase: authUsecase, jwtCfg: jwtCfg}
+func NewAuthHandler(authUsecase *usecase.AuthUcase, jwtCfg *config.JWTConfig, frontendURL string) *AuthHandler {
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	return &AuthHandler{authUsecase: authUsecase, jwtCfg: jwtCfg, frontendURL: frontendURL}
 }
 
 // Register adalah signup publik khusus nasabah (role selalu nasabah).
@@ -176,4 +182,40 @@ func (h *AuthHandler) AdminCreateResetToken(c *gin.Context) {
 		return
 	}
 	response.JSON(c, http.StatusOK, gin.H{"reset_token": token, "expires_in": "1h"})
+}
+
+// SSOStart redirect browser ke halaman login Keycloak.
+func (h *AuthHandler) SSOStart(c *gin.Context) {
+	url, err := h.authUsecase.SSOStart()
+	if err != nil {
+		response.Error(c, http.StatusServiceUnavailable, err.Error())
+		return
+	}
+	c.Redirect(http.StatusFound, url)
+}
+
+// SSOCallback menerima code dari Keycloak, menukar dengan user aplikasi,
+// lalu redirect ke frontend dengan JWT internal di query string.
+func (h *AuthHandler) SSOCallback(c *gin.Context) {
+	fail := func(msg string) {
+		c.Redirect(http.StatusFound, h.frontendURL+"/login?sso_error="+url.QueryEscape(msg))
+	}
+	user, err := h.authUsecase.SSOCallback(c.Request.Context(), c.Query("code"), c.Query("state"))
+	if err != nil {
+		fail(err.Error())
+		return
+	}
+	token, err := auth.GenerateToken(user, h.jwtCfg.Secret, h.jwtCfg.Expiry)
+	if err != nil {
+		fail("gagal membuat sesi")
+		return
+	}
+	q := url.Values{}
+	q.Set("token", token)
+	q.Set("id", strconv.FormatInt(user.ID, 10))
+	q.Set("full_name", user.FullName)
+	q.Set("email", user.Email)
+	q.Set("role", user.Role)
+	q.Set("photo_url", user.PhotoURL)
+	c.Redirect(http.StatusFound, h.frontendURL+"/sso/callback?"+q.Encode())
 }

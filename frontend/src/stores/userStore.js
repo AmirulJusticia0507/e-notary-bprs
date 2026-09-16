@@ -43,5 +43,10 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem(USER_KEY)
   }
 
-  return { token, user, loading, error, isAuthenticated, role, login, logout }
+  // setSession: simpan sesi dari login SSO (token + user dari query callback).
+  function setSession(nextToken, nextUser) {
+    persist(nextToken, nextUser)
+  }
+
+  return { token, user, loading, error, isAuthenticated, role, login, logout, setSession }
 })

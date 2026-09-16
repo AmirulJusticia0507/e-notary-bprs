@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/e-notary-bprs/backend/internal/domain"
@@ -18,6 +19,7 @@ import (
 	pegadaian "github.com/e-notary-bprs/backend/pkg/pegadaian"
 	emeterai "github.com/e-notary-bprs/backend/pkg/emeterai"
 	esign "github.com/e-notary-bprs/backend/pkg/esign"
+	"github.com/e-notary-bprs/backend/pkg/sso"
 )
 
 const (
@@ -35,13 +37,122 @@ var (
 	ErrAccountLocked = errors.New("account locked")
 )
 
-type AuthUcase struct {
-	userRepo  repository.UserRepository
-	resetRepo repository.PasswordResetRepository
+type ssoState struct {
+	nonce     string
+	expiresAt time.Time
 }
 
-func NewAuthUcase(userRepo repository.UserRepository, resetRepo repository.PasswordResetRepository) *AuthUcase {
-	return &AuthUcase{userRepo: userRepo, resetRepo: resetRepo}
+type AuthUcase struct {
+	userRepo   repository.UserRepository
+	resetRepo  repository.PasswordResetRepository
+	ssoClient  *sso.Client
+	ssoMu      sync.Mutex
+	ssoStates  map[string]ssoState
+}
+
+func NewAuthUcase(userRepo repository.UserRepository, resetRepo repository.PasswordResetRepository, ssoClient *sso.Client) *AuthUcase {
+	return &AuthUcase{userRepo: userRepo, resetRepo: resetRepo, ssoClient: ssoClient, ssoStates: make(map[string]ssoState)}
+}
+
+// SSOStateTTL: state/nonce login SSO berlaku 10 menit.
+const SSOStateTTL = 10 * time.Minute
+
+func randomHex(n int) (string, error) {
+	raw := make([]byte, n)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(raw), nil
+}
+
+// SSOStart memulai login Keycloak: kembalikan URL untuk redirect browser.
+func (u *AuthUcase) SSOStart() (string, error) {
+	if u.ssoClient == nil || !u.ssoClient.IsConfigured() {
+		return "", errors.New("SSO Keycloak belum dikonfigurasi (isi KEYCLOAK_ISSUER dan KEYCLOAK_CLIENT_ID)")
+	}
+	state, err := randomHex(16)
+	if err != nil {
+		return "", err
+	}
+	nonce, err := randomHex(16)
+	if err != nil {
+		return "", err
+	}
+	u.ssoMu.Lock()
+	for s, st := range u.ssoStates {
+		if time.Now().After(st.expiresAt) {
+			delete(u.ssoStates, s)
+		}
+	}
+	u.ssoStates[state] = ssoState{nonce: nonce, expiresAt: time.Now().Add(SSOStateTTL)}
+	u.ssoMu.Unlock()
+	return u.ssoClient.AuthURL(state, nonce), nil
+}
+
+// SSOCallback menukar code Keycloak menjadi user aplikasi
+// (auto-provision bila email belum terdaftar).
+func (u *AuthUcase) SSOCallback(ctx context.Context, code, state string) (*domain.User, error) {
+	if u.ssoClient == nil || !u.ssoClient.IsConfigured() {
+		return nil, errors.New("SSO Keycloak belum dikonfigurasi")
+	}
+	u.ssoMu.Lock()
+	st, ok := u.ssoStates[state]
+	delete(u.ssoStates, state)
+	u.ssoMu.Unlock()
+	if !ok || time.Now().After(st.expiresAt) {
+		return nil, errors.New("sesi SSO kedaluwarsa, ulangi login")
+	}
+	oauthToken, err := u.ssoClient.Exchange(ctx, code)
+	if err != nil {
+		return nil, fmt.Errorf("tukar kode SSO: %w", err)
+	}
+	rawIDToken, ok := oauthToken.Extra("id_token").(string)
+	if !ok || rawIDToken == "" {
+		return nil, errors.New("id token tidak ada di respons Keycloak")
+	}
+	claims, err := u.ssoClient.Verify(ctx, rawIDToken, st.nonce)
+	if err != nil {
+		return nil, err
+	}
+	if claims.Email == "" {
+		return nil, errors.New("klaim email tidak ada di token Keycloak")
+	}
+	role := sso.MapRole(claims.Roles)
+	user, err := u.userRepo.FindByEmail(ctx, claims.Email)
+	if err != nil {
+		// Auto-provision: password acak tak terpakai (login via SSO).
+		pw, err := randomHex(32)
+		if err != nil {
+			return nil, err
+		}
+		hash, err := auth.HashPassword(pw)
+		if err != nil {
+			return nil, err
+		}
+		name := claims.Name
+		if name == "" {
+			name = claims.Username
+		}
+		if name == "" {
+			name = claims.Email
+		}
+		user = &domain.User{
+			FullName:     name,
+			Email:        claims.Email,
+			PasswordHash: hash,
+			Role:         role,
+			IsActive:     true,
+		}
+		if err := u.userRepo.Create(ctx, user); err != nil {
+			return nil, err
+		}
+		return user, nil
+	}
+	if !user.IsActive {
+		return nil, errors.New("akun nonaktif")
+	}
+	_ = u.userRepo.ResetLoginAttempts(ctx, user.ID)
+	return user, nil
 }
 
 // ResetTokenTTL: masa berlaku kode reset password.

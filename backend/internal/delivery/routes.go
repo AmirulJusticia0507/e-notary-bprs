@@ -1,7 +1,9 @@
 package delivery
 
 import (
+	"context"
 	"database/sql"
+	"log"
 
 	"github.com/e-notary-bprs/backend/internal/config"
 	deliveryhttp "github.com/e-notary-bprs/backend/internal/delivery/http"
@@ -12,6 +14,7 @@ import (
 	"github.com/e-notary-bprs/backend/pkg/emeterai"
 	"github.com/e-notary-bprs/backend/pkg/esign"
 	"github.com/e-notary-bprs/backend/pkg/pegadaian"
+	"github.com/e-notary-bprs/backend/pkg/sso"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +39,16 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 
 	// Inisialisasi usecases.
 	resetRepo := postgres.NewPasswordResetRepository(db)
-	authUsecase := usecase.NewAuthUcase(userRepo, resetRepo)
+	var ssoClient *sso.Client
+	if cfg.Keycloak.Enabled() {
+		var err error
+		ssoClient, err = sso.NewClient(context.Background(), cfg.Keycloak.Issuer, cfg.Keycloak.InternalURL, cfg.Keycloak.ClientID, cfg.Keycloak.ClientSecret, cfg.Keycloak.RedirectURL)
+		if err != nil {
+			log.Printf("keycloak dinonaktifkan: %v", err)
+			ssoClient = nil
+		}
+	}
+	authUsecase := usecase.NewAuthUcase(userRepo, resetRepo, ssoClient)
 	notaryUsecase := usecase.NewNotaryUcase(notaryRepo)
 	cbsClient := cbs.NewClient(cfg.CBS.BaseURL, cfg.CBS.APIKey, cfg.CBS.ClientCode)
 	bpnClient := bpn.NewClient(cfg.BPN.BaseURL, cfg.BPN.APIKey, cfg.BPN.SecretKey)
@@ -48,7 +60,7 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	docUsecase := usecase.NewLegalDocumentUcase(docRepo, emeteraiClient, esignClient)
 
 	// Inisialisasi handlers.
-	authHandler := deliveryhttp.NewAuthHandler(authUsecase, &cfg.JWT)
+	authHandler := deliveryhttp.NewAuthHandler(authUsecase, &cfg.JWT, cfg.Keycloak.FrontendURL)
 	notaryHandler := deliveryhttp.NewNotaryHandler(notaryUsecase)
 	financingHandler := deliveryhttp.NewFinancingHandler(financingUsecase)
 	orderHandler := deliveryhttp.NewLegalOrderHandler(orderUsecase)
@@ -68,6 +80,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	v1.POST("/auth/login", authHandler.Login)
 	v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
 	v1.POST("/auth/reset-password", authHandler.ResetPassword)
+	v1.GET("/auth/sso/login", authHandler.SSOStart)
+	v1.GET("/auth/sso/callback", authHandler.SSOCallback)
 
 	// Route terlindungi (wajib JWT).
 	authMiddleware := deliveryhttp.NewAuthMiddleware(&cfg.JWT)

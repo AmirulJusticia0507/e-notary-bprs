@@ -5,6 +5,7 @@ import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
 import ForgotView from '../views/auth/ForgotView.vue'
 import ResetView from '../views/auth/ResetView.vue'
+import SsoCallbackView from '../views/auth/SsoCallbackView.vue'
 import ForbiddenView from '../views/auth/ForbiddenView.vue'
 import ChangePasswordView from '../views/settings/ChangePasswordView.vue'
 import DashboardOverview from '../views/dashboard/DashboardOverview.vue'
@@ -52,6 +53,12 @@ const routes = [
     component: AuthLayout,
     meta: { guest: true },
     children: [{ path: '', name: 'reset-password', component: ResetView }],
+  },
+  {
+    path: '/sso/callback',
+    component: AuthLayout,
+    meta: { guest: true },
+    children: [{ path: '', name: 'sso-callback', component: SsoCallbackView }],
   },
   {
     path: '/',

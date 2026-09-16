@@ -1,5 +1,7 @@
 import api, { unwrap } from './api'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1'
+
 export const authService = {
   async login(email, password) {
     const res = await api.post('/auth/login', { email, password })
@@ -20,5 +22,8 @@ export const authService = {
   async changePassword(current_password, new_password) {
     const res = await api.patch('/auth/change-password', { current_password, new_password })
     return unwrap(res)
+  },
+  ssoLoginUrl() {
+    return `${API_BASE}/auth/sso/login`
   },
 }

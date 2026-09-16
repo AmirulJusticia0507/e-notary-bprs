@@ -19,6 +19,7 @@ type Config struct {
 	Pegadaian    PegadaianConfig
 	EMeterai     EMeteraiConfig
 	ESign        ESignConfig
+	Keycloak     KeycloakConfig
 }
 
 type CBSConfig struct {
@@ -47,6 +48,20 @@ type EMeteraiConfig struct {
 type ESignConfig struct {
 	BaseURL string
 	APIKey  string
+}
+
+type KeycloakConfig struct {
+	Issuer      string
+	InternalURL string
+	ClientID    string
+	ClientSecret string
+	RedirectURL string
+	FrontendURL string
+}
+
+// Enabled true bila SSO Keycloak dikonfigurasi.
+func (k KeycloakConfig) Enabled() bool {
+	return k.Issuer != "" && k.ClientID != ""
 }
 
 type DatabaseConfig struct {
@@ -112,6 +127,14 @@ func Load() (*Config, error) {
 		ESign: ESignConfig{
 			BaseURL: getEnv("ESIGN_BASE_URL", ""),
 			APIKey:  getEnv("ESIGN_API_KEY", ""),
+		},
+		Keycloak: KeycloakConfig{
+			Issuer:       getEnv("KEYCLOAK_ISSUER", ""),
+			InternalURL:  getEnv("KEYCLOAK_INTERNAL_URL", ""),
+			ClientID:     getEnv("KEYCLOAK_CLIENT_ID", ""),
+			ClientSecret: getEnv("KEYCLOAK_CLIENT_SECRET", ""),
+			RedirectURL:  getEnv("KEYCLOAK_REDIRECT_URL", ""),
+			FrontendURL:  getEnv("FRONTEND_URL", "http://localhost:5173"),
 		},
 	}
 	return cfg, nil
