@@ -74,9 +74,17 @@ onMounted(fetchMine)
 <template>
   <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-lg font-bold text-slate-900">Halo, {{ userStore.user?.full_name ?? 'Nasabah' }}</h2>
-        <p class="text-xs text-slate-500">Pantau status pengajuan pembiayaan Anda di sini</p>
+      <div class="flex items-center gap-3">
+        <img
+          v-if="userStore.user?.photo_url"
+          :src="userStore.user.photo_url"
+          alt="Foto profil"
+          class="h-12 w-12 rounded-full border border-slate-200 object-cover"
+        />
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Halo, {{ userStore.user?.full_name ?? 'Nasabah' }}</h2>
+          <p class="text-xs text-slate-500">Pantau status pengajuan pembiayaan Anda di sini</p>
+        </div>
       </div>
       <button
         @click="showForm = !showForm"

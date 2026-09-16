@@ -17,6 +17,7 @@ type UserRepository interface {
 	List(ctx context.Context) ([]domain.User, error)
 	Update(ctx context.Context, user *domain.User) error
 	UpdatePassword(ctx context.Context, id int64, passwordHash string) error
+	UpdatePhoto(ctx context.Context, id int64, photoURL string) error
 	RecordFailedLogin(ctx context.Context, id int64, attempts int, lockedUntil *time.Time) error
 	ResetLoginAttempts(ctx context.Context, id int64) error
 }

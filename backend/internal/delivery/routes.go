@@ -91,6 +91,7 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	allAuthed := protected.Group("")
 	allAuthed.Use(authMiddleware.RequireRole("admin", "legal_officer", "notary", "nasabah"))
 	allAuthed.PATCH("/auth/change-password", authHandler.ChangePassword)
+	allAuthed.PATCH("/auth/photo", authHandler.UpdatePhoto)
 
 	// Admin: relay kode reset password ke user (via WA/telepon).
 	adminOnly.GET("/users/password-resets", authHandler.ListPendingResets)

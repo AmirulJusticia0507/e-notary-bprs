@@ -47,12 +47,18 @@ func NewAuthUcase(userRepo repository.UserRepository, resetRepo repository.Passw
 // ResetTokenTTL: masa berlaku kode reset password.
 const ResetTokenTTL = time.Hour
 
-func (u *AuthUcase) Register(ctx context.Context, fullName, email, password, role string) error {
+// MaxPhotoChars: batas data-URL foto profil (~500KB, hasil downscale frontend jauh di bawah ini).
+const MaxPhotoChars = 700000
+
+func (u *AuthUcase) Register(ctx context.Context, fullName, email, password, role, photoURL string) error {
 	if role == "" {
 		role = "legal_officer"
 	}
 	if role != "legal_officer" && role != "admin" && role != "notary" && role != "nasabah" {
 		return ErrInvalidRole
+	}
+	if len(photoURL) > MaxPhotoChars {
+		return errors.New("foto terlalu besar, maksimal ~500KB")
 	}
 	hash, err := auth.HashPassword(password)
 	if err != nil {
@@ -64,7 +70,16 @@ func (u *AuthUcase) Register(ctx context.Context, fullName, email, password, rol
 		PasswordHash: hash,
 		Role:         role,
 		IsActive:     true,
+		PhotoURL:     photoURL,
 	})
+}
+
+// UpdatePhoto mengganti foto profil user yang sedang login.
+func (u *AuthUcase) UpdatePhoto(ctx context.Context, userID int64, photoURL string) error {
+	if len(photoURL) > MaxPhotoChars {
+		return errors.New("foto terlalu besar, maksimal ~500KB")
+	}
+	return u.userRepo.UpdatePhoto(ctx, userID, photoURL)
 }
 
 func (u *AuthUcase) Login(ctx context.Context, email, password string) (*domain.User, error) {

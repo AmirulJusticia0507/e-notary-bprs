@@ -39,9 +39,21 @@ const isActive = computed(() => (match) => match.includes(route.name))
         {{ link.label }}
       </router-link>
     </nav>
-    <div class="border-t border-slate-800 p-4 text-[11px] text-slate-500">
-      <p>SLA closing target 3–5 hari</p>
-      <p v-if="userStore.role" class="mt-1 capitalize text-slate-400">Role: {{ userStore.role.replace('_', ' ') }}</p>
+    <div class="flex items-center gap-2 border-t border-slate-800 p-4">
+      <img
+        v-if="userStore.user?.photo_url"
+        :src="userStore.user.photo_url"
+        alt="Foto profil"
+        class="h-9 w-9 rounded-full object-cover"
+      />
+      <div v-else class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-300">
+        {{ (userStore.user?.full_name || 'U').charAt(0).toUpperCase() }}
+      </div>
+      <div class="min-w-0 text-[11px]">
+        <p class="truncate font-semibold text-slate-200">{{ userStore.user?.full_name || 'Pengguna' }}</p>
+        <p v-if="userStore.role" class="capitalize text-slate-400">{{ userStore.role.replace('_', ' ') }}</p>
+      </div>
     </div>
+    <div class="border-t border-slate-800 p-4 text-[11px] text-slate-500">SLA closing target 3–5 hari</div>
   </aside>
 </template>

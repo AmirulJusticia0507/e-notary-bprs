@@ -28,13 +28,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required,min=6"`
 		Role     string `json:"role"`
+		PhotoURL string `json:"photo_url"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	req.Role = "nasabah"
-	if err := h.authUsecase.Register(c.Request.Context(), req.FullName, req.Email, req.Password, req.Role); err != nil {
+	if err := h.authUsecase.Register(c.Request.Context(), req.FullName, req.Email, req.Password, req.Role, req.PhotoURL); err != nil {
 		if errors.Is(err, usecase.ErrInvalidRole) {
 			response.Error(c, http.StatusBadRequest, err.Error())
 			return
@@ -69,7 +70,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
-	response.JSON(c, http.StatusOK, gin.H{"token": token, "user": gin.H{"id": user.ID, "email": user.Email, "role": user.Role}})
+	response.JSON(c, http.StatusOK, gin.H{"token": token, "user": gin.H{"id": user.ID, "full_name": user.FullName, "email": user.Email, "role": user.Role, "photo_url": user.PhotoURL}})
+}
+
+// UpdatePhoto mengganti foto profil user yang sedang login.
+func (h *AuthHandler) UpdatePhoto(c *gin.Context) {
+	userIDValue, ok := c.Get("user_id")
+	userID, valid := userIDValue.(int64)
+	if !ok || !valid || userID == 0 {
+		response.Error(c, http.StatusUnauthorized, "user context is unavailable")
+		return
+	}
+	var req struct {
+		PhotoURL string `json:"photo_url" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.authUsecase.UpdatePhoto(c.Request.Context(), userID, req.PhotoURL); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, gin.H{"message": "foto profil diperbarui", "photo_url": req.PhotoURL})
 }
 
 // ForgotPassword membuat kode reset (berlaku 1 jam). Selalu 200 agar
