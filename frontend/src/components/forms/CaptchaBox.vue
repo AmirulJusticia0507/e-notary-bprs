@@ -1,10 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 
-// CaptchaBox: kode acak 5 karakter di canvas + input verifikasi.
-// v-model = true bila jawaban benar. Tombol login wajib menunggu ini.
 const solved = defineModel({ default: false })
-
 const input = ref('')
 const code = ref('')
 const canvasRef = ref(null)
@@ -23,18 +20,19 @@ function draw() {
   const W = canvas.width
   const H = canvas.height
   ctx.clearRect(0, 0, W, H)
-  ctx.fillStyle = '#f1f5f9'
+  const gradient = ctx.createLinearGradient(0, 0, W, H)
+  gradient.addColorStop(0, '#f0fdfa')
+  gradient.addColorStop(1, '#eff6ff')
+  ctx.fillStyle = gradient
   ctx.fillRect(0, 0, W, H)
-  // Garis noise.
   for (let i = 0; i < 4; i++) {
-    ctx.strokeStyle = `rgba(100,116,139,${0.3 + Math.random() * 0.4})`
+    ctx.strokeStyle = `rgba(13,148,136,${0.18 + Math.random() * 0.25})`
     ctx.lineWidth = 1 + Math.random()
     ctx.beginPath()
     ctx.moveTo(Math.random() * W, Math.random() * H)
     ctx.bezierCurveTo(Math.random() * W, Math.random() * H, Math.random() * W, Math.random() * H, Math.random() * W, Math.random() * H)
     ctx.stroke()
   }
-  // Karakter acak dengan rotasi.
   const step = W / (code.value.length + 1)
   ;[...code.value].forEach((ch, i) => {
     const x = step * (i + 1) + (Math.random() * 6 - 3)
@@ -44,15 +42,14 @@ function draw() {
     ctx.translate(x, y)
     ctx.rotate(angle)
     ctx.font = `bold ${22 + Math.floor(Math.random() * 6)}px monospace`
-    ctx.fillStyle = `rgb(${30 + Math.floor(Math.random() * 60)},${40 + Math.floor(Math.random() * 60)},${80 + Math.floor(Math.random() * 80)})`
+    ctx.fillStyle = i % 2 ? '#0f766e' : '#1e40af'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(ch, 0, 0)
     ctx.restore()
   })
-  // Titik noise.
-  for (let i = 0; i < 40; i++) {
-    ctx.fillStyle = `rgba(71,85,105,${0.2 + Math.random() * 0.5})`
+  for (let i = 0; i < 35; i++) {
+    ctx.fillStyle = `rgba(15,118,110,${0.12 + Math.random() * 0.25})`
     ctx.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5)
   }
 }
@@ -74,27 +71,14 @@ onMounted(refresh)
 
 <template>
   <div class="space-y-2">
-    <p class="text-xs font-semibold text-slate-600">Captcha <span class="font-normal text-slate-400">(ketik kode di gambar)</span></p>
+    <p class="field-label">Captcha <span class="font-normal text-slate-400">ketik kode di gambar</span></p>
     <div class="flex items-center gap-2">
-      <canvas ref="canvasRef" width="150" height="44" class="rounded-md border border-slate-300" />
-      <button
-        type="button"
-        @click="refresh"
-        title="Muat ulang kode"
-        class="rounded-md border border-slate-300 px-2.5 py-2 text-sm text-slate-600 hover:bg-slate-100"
-      >
-        &#10227;
+      <canvas ref="canvasRef" width="150" height="44" class="rounded-lg border border-slate-200 shadow-sm" />
+      <button type="button" title="Muat ulang kode" class="grid h-11 w-11 place-items-center rounded-lg border border-slate-200 bg-white text-teal-700 shadow-sm transition-colors hover:border-teal-300 hover:bg-teal-50" @click="refresh">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-    <input
-      v-model="input"
-      type="text"
-      maxlength="5"
-      autocomplete="off"
-      placeholder="Kode captcha"
-      class="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm uppercase tracking-widest outline-none focus:border-blue-500"
-      :class="solved ? 'border-emerald-500' : ''"
-    />
+    <input v-model="input" type="text" maxlength="5" autocomplete="off" placeholder="Kode captcha" class="field-input font-mono uppercase tracking-[0.2em]" :class="{ 'border-emerald-400': solved }" />
     <p v-if="solved" class="text-[11px] font-medium text-emerald-600">Captcha benar, silakan klik Masuk.</p>
   </div>
 </template>

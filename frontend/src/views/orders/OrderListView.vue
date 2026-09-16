@@ -5,6 +5,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import DataTable from '../../components/tables/DataTable.vue'
 import StatusBadge from '../../components/tables/StatusBadge.vue'
 import TablePagination from '../../components/tables/TablePagination.vue'
+import AppButton from '../../components/common/AppButton.vue'
 import { useOrderStore } from '../../stores/orderStore'
 
 const store = useOrderStore()
@@ -17,11 +18,11 @@ const perPage = 10
 onMounted(() => store.fetchOrders().catch(() => {}))
 
 const filtered = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  return store.orders.filter((o) => {
-    if (statusFilter.value && o.status !== statusFilter.value) return false
-    if (!q) return true
-    return [o.order_number, o.customer_name, o.notary_name].some((v) => String(v ?? '').toLowerCase().includes(q))
+  const searchText = query.value.trim().toLowerCase()
+  return store.orders.filter((order) => {
+    if (statusFilter.value && order.status !== statusFilter.value) return false
+    if (!searchText) return true
+    return [order.order_number, order.customer_name, order.notary_name].some((value) => String(value ?? '').toLowerCase().includes(searchText))
   })
 })
 
@@ -29,28 +30,36 @@ const paged = computed(() => filtered.value.slice((page.value - 1) * perPage, pa
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-lg font-bold text-slate-900">Legal Orders</h2>
-      <button @click="router.push({ name: 'order-create' })" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-        + Order Baru
-      </button>
+  <div class="space-y-6">
+    <div class="page-header">
+      <div>
+        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-teal-600">Workflow</p>
+        <h1 class="page-title">Legal Orders</h1>
+        <p class="page-subtitle">Kelola dan lacak seluruh order legalitas akad dalam satu tampilan.</p>
+      </div>
+      <AppButton @click="router.push({ name: 'order-create' })" class="!min-h-10">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Order Baru
+      </AppButton>
     </div>
-    <div class="flex flex-wrap gap-3">
-      <input
-        v-model="query"
-        placeholder="Cari order / nasabah / notaris…"
-        class="w-72 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-      />
-      <select v-model="statusFilter" class="rounded-md border border-slate-300 px-3 py-2 text-sm">
-        <option value="">Semua status</option>
-        <option value="pending">pending</option>
-        <option value="in_progress">in_progress</option>
-        <option value="completed">completed</option>
-        <option value="rejected">rejected</option>
-      </select>
-    </div>
-    <LoadingSpinner v-if="store.loading && !store.orders.length" />
+
+    <section class="panel p-3 sm:p-4">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="relative flex-1">
+          <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input v-model="query" type="search" placeholder="Cari order, nasabah, atau notaris…" class="field-input !pl-9" />
+        </div>
+        <select v-model="statusFilter" class="field-input !w-full !min-w-[11rem] lg:!w-52">
+          <option value="">Semua status</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+    </section>
+
+    <LoadingSpinner v-if="store.loading && !store.orders.length" label="Memuat order…" />
     <template v-else>
       <DataTable
         :columns="[
@@ -62,7 +71,7 @@ const paged = computed(() => filtered.value.slice((page.value - 1) * perPage, pa
           { key: 'sla_deadline', label: 'SLA' },
         ]"
         :rows="paged"
-        @row-click="(r) => router.push({ name: 'order-detail', params: { id: r.id } })"
+        @row-click="(row) => router.push({ name: 'order-detail', params: { id: row.id } })"
       >
         <template #cell-status="{ value }"><StatusBadge :status="value" /></template>
         <template #cell-sla_deadline="{ value }">{{ value ? new Date(value).toLocaleDateString('id-ID') : '—' }}</template>

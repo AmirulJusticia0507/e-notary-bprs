@@ -150,6 +150,23 @@ func (c *DatabaseConfig) DSN() string {
 	)
 }
 
+// Source melaporkan dari mana konfigurasi DB berasal (untuk log startup).
+// "DATABASE_URL" bila env terisi, selain itu "DB_HOST/DBPORT lokal".
+func (c *DatabaseConfig) Source() string {
+	if c.DBURL != "" {
+		return "DATABASE_URL"
+	}
+	return "variabel DB_HOST/DB_PORT (lokal)"
+}
+
+// SafeHost mengembalikan host DB tanpa password (aman untuk log).
+func (c *DatabaseConfig) SafeHost() string {
+	if c.DBURL != "" {
+		return "hosted (via DATABASE_URL)"
+	}
+	return fmt.Sprintf("%s:%d/%s", c.Host, c.Port, c.Name)
+}
+
 func firstEnv(keys ...string) string {
 	for _, key := range keys {
 		if value := os.Getenv(key); value != "" {

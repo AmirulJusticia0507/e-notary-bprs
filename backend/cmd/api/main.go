@@ -41,7 +41,8 @@ func main() {
 
 	// Jalankan server di goroutine.
 	go func() {
-		log.Printf("Server berjalan di http://%s:%d", cfg.Server.Host, cfg.Server.Port)
+		log.Printf("✅ Database source: %s", cfg.Database.Source())
+		log.Printf("🌐 Server berjalan di http://%s:%d", cfg.Server.Host, cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}

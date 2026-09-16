@@ -1,6 +1,4 @@
 <script setup>
-import AppBadge from '../common/AppBadge.vue'
-
 const props = defineProps({ status: { type: String, default: '' } })
 
 const toneByStatus = {
@@ -15,5 +13,5 @@ const toneByStatus = {
 </script>
 
 <template>
-  <AppBadge :tone="toneByStatus[props.status] ?? 'neutral'">{{ props.status || '—' }}</AppBadge>
+  <AppBadge :tone="toneByStatus[props.status] ?? 'neutral'">{{ props.status?.replaceAll('_', ' ') || '—' }}</AppBadge>
 </template>
