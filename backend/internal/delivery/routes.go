@@ -7,9 +7,9 @@ import (
 	deliveryhttp "github.com/e-notary-bprs/backend/internal/delivery/http"
 	"github.com/e-notary-bprs/backend/internal/repository/postgres"
 	"github.com/e-notary-bprs/backend/internal/usecase"
+	"github.com/e-notary-bprs/backend/pkg/cbs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/e-notary-bprs/backend/pkg/cbs"
 )
 
 // NewRouter menginisialisasi semua handler dan mengembalikan gin Engine.
@@ -82,6 +82,7 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 		protected.POST("/documents", docHandler.Create)
 		protected.GET("/documents/order/:orderID", docHandler.ListByOrderID)
 		protected.PATCH("/documents/:id/sign", docHandler.UpdateESignStatus)
+		protected.PATCH("/documents/:id/processing", docHandler.UpdateProcessingStatus)
 		protected.GET("/documents/:id", docHandler.GetByID)
 	}
 

@@ -226,3 +226,7 @@ func (u *LegalDocumentUcase) GetByID(ctx context.Context, id int64) (*domain.Leg
 func (u *LegalDocumentUcase) UpdateESignStatus(ctx context.Context, docID int64, status string) error {
 	return u.docRepo.UpdateESignStatus(ctx, docID, status)
 }
+
+func (u *LegalDocumentUcase) UpdateProcessingStatus(ctx context.Context, docID int64, status string, actNumber string, notaryFee int64, processedAt time.Time) error {
+	return u.docRepo.UpdateProcessingStatus(ctx, docID, status, actNumber, notaryFee, processedAt)
+}

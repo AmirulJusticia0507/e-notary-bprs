@@ -76,15 +76,20 @@ type LegalOrderLog struct {
 }
 
 type LegalDocument struct {
-	ID          int64      `db:"id" json:"id"`
-	OrderID     int64      `db:"order_id" json:"order_id"`
-	FileURL     string     `db:"file_url" json:"file_url"`
-	SHA256Hash  string     `db:"sha256_hash" json:"sha256_hash"`
-	EMeteraiSN  string     `db:"e_meterai_sn" json:"e_meterai_sn"`
-	ESignStatus string     `db:"e_sign_status" json:"e_sign_status"`
-	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at" json:"updated_at"`
-	DeletedAt   *time.Time `db:"deleted_at" json:"-"`
+	ID                int64      `db:"id" json:"id"`
+	OrderID           int64      `db:"order_id" json:"order_id"`
+	FileURL           string     `db:"file_url" json:"file_url"`
+	SHA256Hash        string     `db:"sha256_hash" json:"sha256_hash"`
+	EMeteraiSN        string     `db:"e_meterai_sn" json:"e_meterai_sn"`
+	ESignStatus       string     `db:"e_sign_status" json:"e_sign_status"`
+	ActNumber         string     `db:"act_number" json:"act_number"`
+	MinutesStatus     string     `db:"minutes_status" json:"minutes_status"`
+	NotaryFee         int64      `db:"notary_fee" json:"notary_fee"`
+	ProcessingStatus  string     `db:"processing_status" json:"processing_status"`
+	NotaryProcessedAt *time.Time `db:"notary_processed_at" json:"notary_processed_at"`
+	CreatedAt         time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time  `db:"updated_at" json:"updated_at"`
+	DeletedAt         *time.Time `db:"deleted_at" json:"-"`
 }
 
 type OrderDetail struct {

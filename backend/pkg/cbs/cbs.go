@@ -78,8 +78,8 @@ func (c *Client) SyncFinancings(ctx context.Context) (*SyncResponse, error) {
 	// In a real implementation, this would sync to the local database
 	// For now, we just return the count
 	return &SyncResponse{
-		Synced: len(financings),
+		Synced:  len(financings),
 		Updated: 0,
-		Errors: 0,
+		Errors:  0,
 	}, nil
 }

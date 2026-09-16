@@ -11,10 +11,10 @@ import (
 
 // Config berisi semua konfigurasi aplikasi.
 type Config struct {
-	Database     DatabaseConfig
-	Server       ServerConfig
-	JWT          JWTConfig
-	CBS          CBSConfig
+	Database DatabaseConfig
+	Server   ServerConfig
+	JWT      JWTConfig
+	CBS      CBSConfig
 }
 
 type CBSConfig struct {

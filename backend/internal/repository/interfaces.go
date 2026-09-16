@@ -55,4 +55,5 @@ type LegalDocumentRepository interface {
 	FindByOrderID(ctx context.Context, orderID int64) ([]domain.LegalDocument, error)
 	FindByID(ctx context.Context, id int64) (*domain.LegalDocument, error)
 	UpdateESignStatus(ctx context.Context, docID int64, status string) error
+	UpdateProcessingStatus(ctx context.Context, docID int64, status string, actNumber string, notaryFee int64, processedAt time.Time) error
 }
