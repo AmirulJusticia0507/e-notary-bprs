@@ -44,7 +44,7 @@ func (u *AuthUcase) Register(ctx context.Context, fullName, email, password, rol
 	if role == "" {
 		role = "legal_officer"
 	}
-	if role != "legal_officer" && role != "admin" && role != "notary" {
+	if role != "legal_officer" && role != "admin" && role != "notary" && role != "nasabah" {
 		return ErrInvalidRole
 	}
 	hash, err := auth.HashPassword(password)
@@ -144,6 +144,18 @@ func (u *FinancingUcase) GetByID(ctx context.Context, id int64) (*domain.Financi
 
 func (u *FinancingUcase) SyncFromCBS(ctx context.Context, apps []domain.FinancingApplication) error {
 	return u.financingRepo.SyncFromCBS(ctx, apps)
+}
+
+// ApplyForFinancing mencatat pengajuan pembiayaan dari akun nasabah sendiri.
+func (u *FinancingUcase) ApplyForFinancing(ctx context.Context, userID int64, app *domain.FinancingApplication) error {
+	app.UserID = &userID
+	app.Status = "pending"
+	return u.financingRepo.Create(ctx, app)
+}
+
+// ListMine mengembalikan pengajuan milik satu nasabah.
+func (u *FinancingUcase) ListMine(ctx context.Context, userID int64) ([]domain.FinancingApplication, error) {
+	return u.financingRepo.FindByUserID(ctx, userID)
 }
 
 func (u *FinancingUcase) FetchFromCBS(ctx context.Context) ([]domain.FinancingApplication, error) {

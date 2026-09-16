@@ -96,6 +96,40 @@ func (h *FinancingHandler) ValidateBPN(c *gin.Context) {
 	response.JSON(c, http.StatusOK, result)
 }
 
+func (h *FinancingHandler) Apply(c *gin.Context) {
+	userIDValue, ok := c.Get("user_id")
+	userID, valid := userIDValue.(int64)
+	if !ok || !valid || userID == 0 {
+		response.Error(c, http.StatusUnauthorized, "user context is unavailable")
+		return
+	}
+	var f domain.FinancingApplication
+	if err := c.ShouldBindJSON(&f); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.financingUsecase.ApplyForFinancing(c.Request.Context(), userID, &f); err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusCreated, f)
+}
+
+func (h *FinancingHandler) ListMine(c *gin.Context) {
+	userIDValue, ok := c.Get("user_id")
+	userID, valid := userIDValue.(int64)
+	if !ok || !valid || userID == 0 {
+		response.Error(c, http.StatusUnauthorized, "user context is unavailable")
+		return
+	}
+	apps, err := h.financingUsecase.ListMine(c.Request.Context(), userID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, apps)
+}
+
 func (h *FinancingHandler) ValidatePegadaian(c *gin.Context) {
 	noSBG := c.Query("no_sbg")
 	if noSBG == "" {

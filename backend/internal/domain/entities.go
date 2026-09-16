@@ -31,6 +31,7 @@ type Notary struct {
 
 type FinancingApplication struct {
 	ID                int64      `db:"id" json:"id"`
+	UserID            *int64     `db:"user_id" json:"user_id,omitempty"`
 	CustomerName      string     `db:"customer_name" json:"customer_name"`
 	CustomerNIK       string     `db:"customer_nik" json:"customer_nik"`
 	FinancingAmount   int64      `db:"financing_amount" json:"financing_amount"`

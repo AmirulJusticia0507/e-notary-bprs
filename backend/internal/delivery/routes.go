@@ -91,6 +91,12 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	allStaff.GET("/notaries", notaryHandler.List)
 	allStaff.GET("/notaries/:id", notaryHandler.GetByID)
 
+	// Nasabah: ajukan + pantau pengajuan sendiri.
+	nasabahOnly := protected.Group("")
+	nasabahOnly.Use(authMiddleware.RequireRole("nasabah"))
+	nasabahOnly.POST("/financings/apply", financingHandler.Apply)
+	nasabahOnly.GET("/financings/mine", financingHandler.ListMine)
+
 	// Financing Applications: legal yang input/sync, semua role boleh lihat + validasi.
 	legalTeam.POST("/financings", financingHandler.Create)
 	legalTeam.POST("/financings/sync", financingHandler.SyncFromCBS)

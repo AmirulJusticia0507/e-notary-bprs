@@ -32,6 +32,7 @@ type FinancingRepository interface {
 	Create(ctx context.Context, app *domain.FinancingApplication) error
 	FindAll(ctx context.Context) ([]domain.FinancingApplication, error)
 	FindByID(ctx context.Context, id int64) (*domain.FinancingApplication, error)
+	FindByUserID(ctx context.Context, userID int64) ([]domain.FinancingApplication, error)
 	SyncFromCBS(ctx context.Context, apps []domain.FinancingApplication) error
 }
 

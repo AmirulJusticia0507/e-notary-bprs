@@ -10,6 +10,7 @@ const links = [
   { to: { name: 'dashboard' }, label: 'Dashboard', match: ['dashboard'], roles: ['admin', 'legal_officer', 'notary'] },
   { to: { name: 'orders' }, label: 'Legal Orders', match: ['orders', 'order-detail', 'order-create'], roles: ['admin', 'legal_officer', 'notary'] },
   { to: { name: 'order-create' }, label: '+ Order Baru', match: ['order-create'], roles: ['admin', 'legal_officer'] },
+  { to: { name: 'nasabah-dashboard' }, label: 'Pengajuan Saya', match: ['nasabah-dashboard'], roles: ['nasabah'] },
 ]
 
 const visibleLinks = computed(() => links.filter((l) => l.roles.includes(userStore.role)))
