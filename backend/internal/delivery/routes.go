@@ -7,6 +7,7 @@ import (
 	deliveryhttp "github.com/e-notary-bprs/backend/internal/delivery/http"
 	"github.com/e-notary-bprs/backend/internal/repository/postgres"
 	"github.com/e-notary-bprs/backend/internal/usecase"
+	"github.com/e-notary-bprs/backend/pkg/bpn"
 	"github.com/e-notary-bprs/backend/pkg/cbs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -34,7 +35,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	authUsecase := usecase.NewAuthUcase(userRepo)
 	notaryUsecase := usecase.NewNotaryUcase(notaryRepo)
 	cbsClient := cbs.NewClient(cfg.CBS.BaseURL, cfg.CBS.APIKey, cfg.CBS.ClientCode)
-	financingUsecase := usecase.NewFinancingUcase(financingRepo, cbsClient)
+	bpnClient := bpn.NewClient(cfg.BPN.BaseURL, cfg.BPN.APIKey, cfg.BPN.SecretKey)
+	financingUsecase := usecase.NewFinancingUcase(financingRepo, cbsClient, bpnClient)
 	orderUsecase := usecase.NewLegalOrderUcase(orderRepo, logRepo)
 	docUsecase := usecase.NewLegalDocumentUcase(docRepo)
 
@@ -67,6 +69,7 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 		protected.GET("/financings", financingHandler.List)
 		protected.POST("/financings/sync", financingHandler.SyncFromCBS)
 		protected.GET("/financings/fetch-cbs", financingHandler.FetchFromCBS)
+		protected.GET("/financings/validate-bpn", financingHandler.ValidateBPN)
 		protected.GET("/financings/:id", financingHandler.GetByID)
 
 		// Legal Orders

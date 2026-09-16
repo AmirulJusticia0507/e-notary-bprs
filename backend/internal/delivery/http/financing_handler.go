@@ -81,3 +81,17 @@ func (h *FinancingHandler) FetchFromCBS(c *gin.Context) {
 	}
 	response.JSON(c, http.StatusOK, gin.H{"message": "fetched from CBS", "count": len(apps)})
 }
+
+func (h *FinancingHandler) ValidateBPN(c *gin.Context) {
+	noSertifikat := c.Query("no_sertifikat")
+	if noSertifikat == "" {
+		response.Error(c, http.StatusBadRequest, "no_sertifikat is required")
+		return
+	}
+	result, err := h.financingUsecase.ValidateCollateralViaBPN(c.Request.Context(), noSertifikat)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, result)
+}

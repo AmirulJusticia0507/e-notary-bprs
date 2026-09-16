@@ -11,16 +11,23 @@ import (
 
 // Config berisi semua konfigurasi aplikasi.
 type Config struct {
-	Database DatabaseConfig
-	Server   ServerConfig
-	JWT      JWTConfig
-	CBS      CBSConfig
+	Database     DatabaseConfig
+	Server       ServerConfig
+	JWT          JWTConfig
+	CBS          CBSConfig
+	BPN          BPNConfig
 }
 
 type CBSConfig struct {
 	BaseURL    string
 	APIKey     string
 	ClientCode string
+}
+
+type BPNConfig struct {
+	BaseURL    string
+	APIKey     string
+	SecretKey  string
 }
 
 type DatabaseConfig struct {
@@ -68,6 +75,11 @@ func Load() (*Config, error) {
 			BaseURL:    getEnv("CBS_BASE_URL", ""),
 			APIKey:     getEnv("CBS_API_KEY", ""),
 			ClientCode: getEnv("CBS_CLIENT_CODE", ""),
+		},
+		BPN: BPNConfig{
+			BaseURL:    getEnv("BPN_BASE_URL", ""),
+			APIKey:     getEnv("BPN_API_KEY", ""),
+			SecretKey:  getEnv("BPN_SECRET_KEY", ""),
 		},
 	}
 	return cfg, nil

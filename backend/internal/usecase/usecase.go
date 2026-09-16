@@ -9,6 +9,7 @@ import (
 	"github.com/e-notary-bprs/backend/internal/repository"
 	"github.com/e-notary-bprs/backend/pkg/auth"
 	cbs "github.com/e-notary-bprs/backend/pkg/cbs"
+	bpn "github.com/e-notary-bprs/backend/pkg/bpn"
 )
 
 var (
@@ -88,10 +89,11 @@ func (u *NotaryUcase) Delete(ctx context.Context, id int64) error {
 type FinancingUcase struct {
 	financingRepo repository.FinancingRepository
 	cbsClient     *cbs.Client
+	bpnClient     *bpn.Client
 }
 
-func NewFinancingUcase(financingRepo repository.FinancingRepository, cbsClient *cbs.Client) *FinancingUcase {
-	return &FinancingUcase{financingRepo: financingRepo, cbsClient: cbsClient}
+func NewFinancingUcase(financingRepo repository.FinancingRepository, cbsClient *cbs.Client, bpnClient *bpn.Client) *FinancingUcase {
+	return &FinancingUcase{financingRepo: financingRepo, cbsClient: cbsClient, bpnClient: bpnClient}
 }
 
 func (u *FinancingUcase) Create(ctx context.Context, app *domain.FinancingApplication) error {
@@ -136,6 +138,13 @@ func (u *FinancingUcase) FetchFromCBS(ctx context.Context) ([]domain.FinancingAp
 	}
 
 	return apps, nil
+}
+
+func (u *FinancingUcase) ValidateCollateralViaBPN(ctx context.Context, noSertifikat string) (*bpn.ValidasiResult, error) {
+	if u.bpnClient == nil {
+		return nil, errors.New("BPN client not configured")
+	}
+	return u.bpnClient.ValidateSertifikat(ctx, noSertifikat)
 }
 
 type LegalOrderUcase struct {
