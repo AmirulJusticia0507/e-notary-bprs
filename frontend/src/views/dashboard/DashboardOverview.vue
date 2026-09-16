@@ -5,8 +5,10 @@ import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import DataTable from '../../components/tables/DataTable.vue'
 import StatusBadge from '../../components/tables/StatusBadge.vue'
 import { useOrderStore } from '../../stores/orderStore'
+import { useUserStore } from '../../stores/userStore'
 
 const store = useOrderStore()
+const userStore = useUserStore()
 const router = useRouter()
 
 const cards = [
@@ -23,7 +25,11 @@ onMounted(() => store.fetchOrders().catch(() => {}))
   <div class="space-y-5">
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-bold text-slate-900">Dashboard</h2>
-      <button @click="router.push({ name: 'order-create' })" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+      <button
+        v-if="userStore.role !== 'notary'"
+        @click="router.push({ name: 'order-create' })"
+        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
         + Order Baru
       </button>
     </div>

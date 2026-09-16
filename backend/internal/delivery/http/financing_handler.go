@@ -95,3 +95,17 @@ func (h *FinancingHandler) ValidateBPN(c *gin.Context) {
 	}
 	response.JSON(c, http.StatusOK, result)
 }
+
+func (h *FinancingHandler) ValidatePegadaian(c *gin.Context) {
+	noSBG := c.Query("no_sbg")
+	if noSBG == "" {
+		response.Error(c, http.StatusBadRequest, "no_sbg is required")
+		return
+	}
+	result, err := h.financingUsecase.ValidateCollateralViaPegadaian(c.Request.Context(), noSBG)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, result)
+}

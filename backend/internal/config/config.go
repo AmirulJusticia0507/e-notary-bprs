@@ -16,6 +16,7 @@ type Config struct {
 	JWT          JWTConfig
 	CBS          CBSConfig
 	BPN          BPNConfig
+	Pegadaian    PegadaianConfig
 }
 
 type CBSConfig struct {
@@ -28,6 +29,12 @@ type BPNConfig struct {
 	BaseURL    string
 	APIKey     string
 	SecretKey  string
+}
+
+type PegadaianConfig struct {
+	BaseURL     string
+	APIKey      string
+	PartnerCode string
 }
 
 type DatabaseConfig struct {
@@ -80,6 +87,11 @@ func Load() (*Config, error) {
 			BaseURL:    getEnv("BPN_BASE_URL", ""),
 			APIKey:     getEnv("BPN_API_KEY", ""),
 			SecretKey:  getEnv("BPN_SECRET_KEY", ""),
+		},
+		Pegadaian: PegadaianConfig{
+			BaseURL:     getEnv("PEGADAIAN_BASE_URL", ""),
+			APIKey:      getEnv("PEGADAIAN_API_KEY", ""),
+			PartnerCode: getEnv("PEGADAIAN_PARTNER_CODE", ""),
 		},
 	}
 	return cfg, nil

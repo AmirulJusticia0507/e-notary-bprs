@@ -1,13 +1,18 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '../stores/userStore'
 
 const route = useRoute()
+const userStore = useUserStore()
 
 const links = [
-  { to: { name: 'dashboard' }, label: 'Dashboard', match: ['dashboard'] },
-  { to: { name: 'orders' }, label: 'Legal Orders', match: ['orders', 'order-detail', 'order-create'] },
+  { to: { name: 'dashboard' }, label: 'Dashboard', match: ['dashboard'], roles: ['admin', 'legal_officer', 'notary'] },
+  { to: { name: 'orders' }, label: 'Legal Orders', match: ['orders', 'order-detail', 'order-create'], roles: ['admin', 'legal_officer', 'notary'] },
+  { to: { name: 'order-create' }, label: '+ Order Baru', match: ['order-create'], roles: ['admin', 'legal_officer'] },
 ]
+
+const visibleLinks = computed(() => links.filter((l) => l.roles.includes(userStore.role)))
 
 const isActive = computed(() => (match) => match.includes(route.name))
 </script>
@@ -23,7 +28,7 @@ const isActive = computed(() => (match) => match.includes(route.name))
     </div>
     <nav class="flex-1 space-y-1 p-3">
       <router-link
-        v-for="link in links"
+        v-for="link in visibleLinks"
         :key="link.label"
         :to="link.to"
         class="block rounded-md px-3 py-2 text-sm font-medium transition-colors"
@@ -32,6 +37,9 @@ const isActive = computed(() => (match) => match.includes(route.name))
         {{ link.label }}
       </router-link>
     </nav>
-    <div class="border-t border-slate-800 p-4 text-[11px] text-slate-500">SLA closing target 3–5 hari</div>
+    <div class="border-t border-slate-800 p-4 text-[11px] text-slate-500">
+      <p>SLA closing target 3–5 hari</p>
+      <p v-if="userStore.role" class="mt-1 capitalize text-slate-400">Role: {{ userStore.role.replace('_', ' ') }}</p>
+    </div>
   </aside>
 </template>

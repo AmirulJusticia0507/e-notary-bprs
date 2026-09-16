@@ -9,6 +9,7 @@ import (
 	"github.com/e-notary-bprs/backend/internal/usecase"
 	"github.com/e-notary-bprs/backend/pkg/bpn"
 	"github.com/e-notary-bprs/backend/pkg/cbs"
+	"github.com/e-notary-bprs/backend/pkg/pegadaian"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +37,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	notaryUsecase := usecase.NewNotaryUcase(notaryRepo)
 	cbsClient := cbs.NewClient(cfg.CBS.BaseURL, cfg.CBS.APIKey, cfg.CBS.ClientCode)
 	bpnClient := bpn.NewClient(cfg.BPN.BaseURL, cfg.BPN.APIKey, cfg.BPN.SecretKey)
-	financingUsecase := usecase.NewFinancingUcase(financingRepo, cbsClient, bpnClient)
+	pegadaianClient := pegadaian.NewClient(cfg.Pegadaian.BaseURL, cfg.Pegadaian.APIKey, cfg.Pegadaian.PartnerCode)
+	financingUsecase := usecase.NewFinancingUcase(financingRepo, cbsClient, bpnClient, pegadaianClient)
 	orderUsecase := usecase.NewLegalOrderUcase(orderRepo, logRepo)
 	docUsecase := usecase.NewLegalDocumentUcase(docRepo)
 
@@ -52,42 +54,55 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	v1.POST("/auth/register", authHandler.Register)
 	v1.POST("/auth/login", authHandler.Login)
 
-	// Route terlindungi.
+	// Route terlindungi (wajib JWT).
 	authMiddleware := deliveryhttp.NewAuthMiddleware(&cfg.JWT)
 	protected := v1.Group("")
 	protected.Use(authMiddleware.Handler())
-	{
-		// Notaries
-		protected.POST("/notaries", notaryHandler.Create)
-		protected.GET("/notaries", notaryHandler.List)
-		protected.GET("/notaries/:id", notaryHandler.GetByID)
-		protected.PUT("/notaries/:id", notaryHandler.Update)
-		protected.DELETE("/notaries/:id", notaryHandler.Delete)
 
-		// Financing Applications
-		protected.POST("/financings", financingHandler.Create)
-		protected.GET("/financings", financingHandler.List)
-		protected.POST("/financings/sync", financingHandler.SyncFromCBS)
-		protected.GET("/financings/fetch-cbs", financingHandler.FetchFromCBS)
-		protected.GET("/financings/validate-bpn", financingHandler.ValidateBPN)
-		protected.GET("/financings/:id", financingHandler.GetByID)
+	// Grup role:
+	// - adminOnly: kelola master (notaris create/update/delete)
+	// - legalTeam: admin + legal_officer (buat order, sync CBS, kelola dokumen)
+	// - allStaff: admin + legal_officer + notary (lihat data + update processing notaris)
+	adminOnly := protected.Group("")
+	adminOnly.Use(authMiddleware.RequireRole("admin"))
 
-		// Legal Orders
-		protected.POST("/orders", orderHandler.Create)
-		protected.GET("/orders", orderHandler.List)
-		protected.GET("/orders/notary/:notaryID", orderHandler.ListByNotary)
-		protected.GET("/orders/assigned/:assignedTo", orderHandler.ListByAssignedTo)
-		protected.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
-		protected.GET("/orders/:id/logs", orderHandler.GetLogs)
-		protected.GET("/orders/:id", orderHandler.GetByID)
+	legalTeam := protected.Group("")
+	legalTeam.Use(authMiddleware.RequireRole("admin", "legal_officer"))
 
-		// Legal Documents
-		protected.POST("/documents", docHandler.Create)
-		protected.GET("/documents/order/:orderID", docHandler.ListByOrderID)
-		protected.PATCH("/documents/:id/sign", docHandler.UpdateESignStatus)
-		protected.PATCH("/documents/:id/processing", docHandler.UpdateProcessingStatus)
-		protected.GET("/documents/:id", docHandler.GetByID)
-	}
+	allStaff := protected.Group("")
+	allStaff.Use(authMiddleware.RequireRole("admin", "legal_officer", "notary"))
+
+	// Notaries: master hanya admin yang ubah, semua role boleh lihat.
+	adminOnly.POST("/notaries", notaryHandler.Create)
+	adminOnly.PUT("/notaries/:id", notaryHandler.Update)
+	adminOnly.DELETE("/notaries/:id", notaryHandler.Delete)
+	allStaff.GET("/notaries", notaryHandler.List)
+	allStaff.GET("/notaries/:id", notaryHandler.GetByID)
+
+	// Financing Applications: legal yang input/sync, semua role boleh lihat + validasi.
+	legalTeam.POST("/financings", financingHandler.Create)
+	legalTeam.POST("/financings/sync", financingHandler.SyncFromCBS)
+	allStaff.GET("/financings", financingHandler.List)
+	allStaff.GET("/financings/fetch-cbs", financingHandler.FetchFromCBS)
+	allStaff.GET("/financings/validate-bpn", financingHandler.ValidateBPN)
+	allStaff.GET("/financings/validate-pegadaian", financingHandler.ValidatePegadaian)
+	allStaff.GET("/financings/:id", financingHandler.GetByID)
+
+	// Legal Orders: legal yang buat/ubah status, semua role boleh lihat.
+	legalTeam.POST("/orders", orderHandler.Create)
+	legalTeam.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
+	allStaff.GET("/orders", orderHandler.List)
+	allStaff.GET("/orders/notary/:notaryID", orderHandler.ListByNotary)
+	allStaff.GET("/orders/assigned/:assignedTo", orderHandler.ListByAssignedTo)
+	allStaff.GET("/orders/:id/logs", orderHandler.GetLogs)
+	allStaff.GET("/orders/:id", orderHandler.GetByID)
+
+	// Legal Documents: legal yang upload/sign, notaris update processing + semua boleh baca.
+	legalTeam.POST("/documents", docHandler.Create)
+	legalTeam.PATCH("/documents/:id/sign", docHandler.UpdateESignStatus)
+	allStaff.GET("/documents/order/:orderID", docHandler.ListByOrderID)
+	allStaff.PATCH("/documents/:id/processing", docHandler.UpdateProcessingStatus)
+	allStaff.GET("/documents/:id", docHandler.GetByID)
 
 	return r
 }

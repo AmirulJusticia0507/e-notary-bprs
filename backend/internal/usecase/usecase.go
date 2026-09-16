@@ -10,6 +10,7 @@ import (
 	"github.com/e-notary-bprs/backend/pkg/auth"
 	cbs "github.com/e-notary-bprs/backend/pkg/cbs"
 	bpn "github.com/e-notary-bprs/backend/pkg/bpn"
+	pegadaian "github.com/e-notary-bprs/backend/pkg/pegadaian"
 )
 
 var (
@@ -87,13 +88,14 @@ func (u *NotaryUcase) Delete(ctx context.Context, id int64) error {
 }
 
 type FinancingUcase struct {
-	financingRepo repository.FinancingRepository
-	cbsClient     *cbs.Client
-	bpnClient     *bpn.Client
+	financingRepo   repository.FinancingRepository
+	cbsClient       *cbs.Client
+	bpnClient       *bpn.Client
+	pegadaianClient *pegadaian.Client
 }
 
-func NewFinancingUcase(financingRepo repository.FinancingRepository, cbsClient *cbs.Client, bpnClient *bpn.Client) *FinancingUcase {
-	return &FinancingUcase{financingRepo: financingRepo, cbsClient: cbsClient, bpnClient: bpnClient}
+func NewFinancingUcase(financingRepo repository.FinancingRepository, cbsClient *cbs.Client, bpnClient *bpn.Client, pegadaianClient *pegadaian.Client) *FinancingUcase {
+	return &FinancingUcase{financingRepo: financingRepo, cbsClient: cbsClient, bpnClient: bpnClient, pegadaianClient: pegadaianClient}
 }
 
 func (u *FinancingUcase) Create(ctx context.Context, app *domain.FinancingApplication) error {
@@ -145,6 +147,13 @@ func (u *FinancingUcase) ValidateCollateralViaBPN(ctx context.Context, noSertifi
 		return nil, errors.New("BPN client not configured")
 	}
 	return u.bpnClient.ValidateSertifikat(ctx, noSertifikat)
+}
+
+func (u *FinancingUcase) ValidateCollateralViaPegadaian(ctx context.Context, noSBG string) (*pegadaian.ValidasiResult, error) {
+	if u.pegadaianClient == nil {
+		return nil, errors.New("pegadaian client not configured")
+	}
+	return u.pegadaianClient.ValidateGadai(ctx, noSBG)
 }
 
 type LegalOrderUcase struct {
