@@ -6,12 +6,34 @@
   "sslRequired": "none",
   "registrationAllowed": false,
   "resetPasswordAllowed": true,
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 10
+    }
+  ],
   "roles": {
     "realm": [
-      { "name": "admin", "description": "Administrator e-Notary" },
-      { "name": "legal_officer", "description": "Petugas legal BPRS" },
-      { "name": "notary", "description": "Notaris rekanan" },
-      { "name": "nasabah", "description": "Nasabah BPRS" }
+      {
+        "name": "admin",
+        "description": "Administrator e-Notary"
+      },
+      {
+        "name": "legal_officer",
+        "description": "Petugas legal BPRS"
+      },
+      {
+        "name": "notary",
+        "description": "Notaris rekanan"
+      },
+      {
+        "name": "nasabah",
+        "description": "Nasabah BPRS"
+      }
     ]
   },
   "clients": [
@@ -23,8 +45,12 @@
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:5173/*"],
-      "webOrigins": ["http://localhost:5173"]
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ]
     },
     {
       "clientId": "enotary-backend",
@@ -37,7 +63,9 @@
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["http://localhost:8080/api/v1/auth/sso/callback"],
+      "redirectUris": [
+        "http://localhost:8080/api/v1/auth/sso/callback"
+      ],
       "webOrigins": [],
       "protocolMappers": [
         {
