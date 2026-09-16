@@ -32,6 +32,6 @@ async function submit() {
     <FormInput v-model="form.password" label="Password" type="password" placeholder="••••••••" :error="errors.password" />
     <p v-if="failed" class="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{{ failed }}</p>
     <AppButton type="submit" :loading="store.loading" class="w-full">Masuk</AppButton>
-    <p class="text-center font-mono text-[11px] text-slate-400">dev: admin@bprs.local / admin123</p>
+    <p class="text-center font-mono text-[11px] text-slate-400">dev: admin@bprs.local / password123</p>
   </form>
 </template>
