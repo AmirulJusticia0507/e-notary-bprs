@@ -1,5 +1,0 @@
-{
-  "scripts": {
-    "build": "cd ../frontend && npm ci && npm run build && rm -rf ../backend/dist && cp -R dist ../backend/dist"
-  }
-}
