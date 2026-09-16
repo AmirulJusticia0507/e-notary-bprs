@@ -68,10 +68,22 @@ Variabel env (lihat `internal/config/config.go`):
 | Key | Default | Keterangan |
 | --- | ------- | ---------- |
 | `DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME/DB_SSLMODE` | `localhost/5432/postgres/postgres/bprs_enotary/disable` | koneksi pgx stdlib (`pkg/db.Open(cfg.Database)`) |
-| `SERVER_HOST/SERVER_PORT` | `0.0.0.0/8080` | listen address |
+| `DATABASE_URL` / `POSTGRES_URL` | kosong | DSN database cloud (Neon/Vercel Postgres); mengambil prioritas atas `DB_*` |
+| `SERVER_HOST/SERVER_PORT` | `0.0.0.0/8080` | listen address lokal |
+| `PORT` | `SERVER_PORT`/8080 | port runtime cloud; Vercel mengisi otomatis |
 | `JWT_SECRET/JWT_EXPIRY` | `e-notary-bprs-secret-key/24h` | HS256, durasi `time.ParseDuration` |
 
-## 5. Verifikasi backend
+## 5. Deployment Vercel backend
+
+Proyek Vercel untuk API harus menggunakan **Root Directory** `backend` dan framework preset **Go**. Tambahkan environment variable berikut di Vercel:
+
+- `DATABASE_URL` atau `POSTGRES_URL`: DSN PostgreSQL cloud, misalnya dari Neon/Vercel Postgres.
+- `JWT_SECRET`: secret minimal 32 karakter.
+- `PORT` tidak perlu diisi; Vercel menetapkannya otomatis.
+
+Jangan gunakan `localhost` untuk database di Vercel. Jalankan migration terhadap database cloud sebelum deployment, lalu redeploy setelah environment variable tersedia.
+
+## 6. Verifikasi backend
 
 ```bash
 cd backend

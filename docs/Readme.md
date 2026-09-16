@@ -13,6 +13,8 @@ Sistem Manajemen Legalitas Akad Pembiayaan Syariah & Order Notaris Rekanan.
 - [System Structures](structures.md) — Folder layout, architecture & DB schema
 - [Setup Guide](SETUP.md) — Migrasi DB, konfigurasi env, verifikasi backend
 
+Tambahan: [Data & Integrations](integrations.md) - Scope input manual, master notaris, dan integrasi eksternal.
+
 ## Quick Start (Local Setup)
 
 ### 1. Database (PostgreSQL Migration)

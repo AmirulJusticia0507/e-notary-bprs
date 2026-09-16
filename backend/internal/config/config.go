@@ -11,9 +11,16 @@ import (
 
 // Config berisi semua konfigurasi aplikasi.
 type Config struct {
-	Database DatabaseConfig
-	Server   ServerConfig
-	JWT      JWTConfig
+	Database     DatabaseConfig
+	Server       ServerConfig
+	JWT          JWTConfig
+	CBS          CBSConfig
+}
+
+type CBSConfig struct {
+	BaseURL    string
+	APIKey     string
+	ClientCode string
 }
 
 type DatabaseConfig struct {
@@ -47,15 +54,20 @@ func Load() (*Config, error) {
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			Name:     getEnv("DB_NAME", "bprs_enotary"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
-			DBURL:    getEnv("DATABASE_URL", ""),
+			DBURL:    firstEnv("DATABASE_URL", "POSTGRES_URL"),
 		},
 		Server: ServerConfig{
 			Host: getEnv("SERVER_HOST", "0.0.0.0"),
-			Port: getEnvAsInt("SERVER_PORT", 8080),
+			Port: getEnvAsInt("PORT", getEnvAsInt("SERVER_PORT", 8080)),
 		},
 		JWT: JWTConfig{
 			Secret: getEnv("JWT_SECRET", "e-notary-bprs-secret-key"),
 			Expiry: getEnvAsDuration("JWT_EXPIRY", 24*time.Hour),
+		},
+		CBS: CBSConfig{
+			BaseURL:    getEnv("CBS_BASE_URL", ""),
+			APIKey:     getEnv("CBS_API_KEY", ""),
+			ClientCode: getEnv("CBS_CLIENT_CODE", ""),
 		},
 	}
 	return cfg, nil
@@ -69,6 +81,15 @@ func (c *DatabaseConfig) DSN() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		c.User, c.Password, c.Host, c.Port, c.Name, c.SSLMode,
 	)
+}
+
+func firstEnv(keys ...string) string {
+	for _, key := range keys {
+		if value := os.Getenv(key); value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func getEnv(key, fallback string) string {

@@ -9,6 +9,7 @@ import (
 	"github.com/e-notary-bprs/backend/internal/usecase"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/e-notary-bprs/backend/pkg/cbs"
 )
 
 // NewRouter menginisialisasi semua handler dan mengembalikan gin Engine.
@@ -32,7 +33,8 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 	// Inisialisasi usecases.
 	authUsecase := usecase.NewAuthUcase(userRepo)
 	notaryUsecase := usecase.NewNotaryUcase(notaryRepo)
-	financingUsecase := usecase.NewFinancingUcase(financingRepo)
+	cbsClient := cbs.NewClient(cfg.CBS.BaseURL, cfg.CBS.APIKey, cfg.CBS.ClientCode)
+	financingUsecase := usecase.NewFinancingUcase(financingRepo, cbsClient)
 	orderUsecase := usecase.NewLegalOrderUcase(orderRepo, logRepo)
 	docUsecase := usecase.NewLegalDocumentUcase(docRepo)
 
@@ -64,6 +66,7 @@ func NewRouter(cfg *config.Config, db *sql.DB) *gin.Engine {
 		protected.POST("/financings", financingHandler.Create)
 		protected.GET("/financings", financingHandler.List)
 		protected.POST("/financings/sync", financingHandler.SyncFromCBS)
+		protected.GET("/financings/fetch-cbs", financingHandler.FetchFromCBS)
 		protected.GET("/financings/:id", financingHandler.GetByID)
 
 		// Legal Orders

@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoadDefaults(t *testing.T) {
-	for _, k := range []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_SSLMODE", "SERVER_HOST", "SERVER_PORT", "JWT_SECRET", "JWT_EXPIRY"} {
+	for _, k := range []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_SSLMODE", "DATABASE_URL", "POSTGRES_URL", "SERVER_HOST", "SERVER_PORT", "PORT", "JWT_SECRET", "JWT_EXPIRY"} {
 		_ = os.Unsetenv(k)
 	}
 	cfg, err := Load()
@@ -46,10 +46,22 @@ func TestDatabaseDSN(t *testing.T) {
 	}
 }
 
+func TestDatabaseDSNUsesDatabaseURL(t *testing.T) {
+	cfg := &DatabaseConfig{
+		DBURL: "postgres://user:password@db.example.com:5432/prod?sslmode=require",
+	}
+	want := cfg.DBURL
+	if got := cfg.DSN(); got != want {
+		t.Errorf("DSN() = %q, want %q", got, want)
+	}
+}
+
 func TestLoadFromEnv(t *testing.T) {
 	t.Setenv("DB_HOST", "db.internal")
 	t.Setenv("DB_PORT", "5433")
 	t.Setenv("DB_NAME", "custom_db")
+	t.Setenv("DATABASE_URL", "postgres://user:password@db.example.com:5432/prod?sslmode=require")
+	t.Setenv("PORT", "8081")
 	t.Setenv("JWT_EXPIRY", "2h")
 
 	cfg, err := Load()
@@ -61,6 +73,12 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 	if cfg.Database.Port != 5433 {
 		t.Errorf("Database.Port = %d, want 5433", cfg.Database.Port)
+	}
+	if cfg.Database.DSN() != "postgres://user:password@db.example.com:5432/prod?sslmode=require" {
+		t.Errorf("Database.DSN() = %q, want DATABASE_URL", cfg.Database.DSN())
+	}
+	if cfg.Server.Port != 8081 {
+		t.Errorf("Server.Port = %d, want 8081", cfg.Server.Port)
 	}
 	if cfg.JWT.Expiry != 2*time.Hour {
 		t.Errorf("JWT.Expiry = %v, want 2h", cfg.JWT.Expiry)

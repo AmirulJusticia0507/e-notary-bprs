@@ -72,3 +72,12 @@ func (h *FinancingHandler) SyncFromCBS(c *gin.Context) {
 	}
 	response.JSON(c, http.StatusOK, gin.H{"message": "synced", "count": len(apps)})
 }
+
+func (h *FinancingHandler) FetchFromCBS(c *gin.Context) {
+	apps, err := h.financingUsecase.FetchFromCBS(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, gin.H{"message": "fetched from CBS", "count": len(apps)})
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/e-notary-bprs/backend/internal/domain"
 	"github.com/e-notary-bprs/backend/internal/repository"
 	"github.com/e-notary-bprs/backend/pkg/auth"
+	cbs "github.com/e-notary-bprs/backend/pkg/cbs"
 )
 
 var (
@@ -86,10 +87,11 @@ func (u *NotaryUcase) Delete(ctx context.Context, id int64) error {
 
 type FinancingUcase struct {
 	financingRepo repository.FinancingRepository
+	cbsClient     *cbs.Client
 }
 
-func NewFinancingUcase(financingRepo repository.FinancingRepository) *FinancingUcase {
-	return &FinancingUcase{financingRepo: financingRepo}
+func NewFinancingUcase(financingRepo repository.FinancingRepository, cbsClient *cbs.Client) *FinancingUcase {
+	return &FinancingUcase{financingRepo: financingRepo, cbsClient: cbsClient}
 }
 
 func (u *FinancingUcase) Create(ctx context.Context, app *domain.FinancingApplication) error {
@@ -106,6 +108,34 @@ func (u *FinancingUcase) GetByID(ctx context.Context, id int64) (*domain.Financi
 
 func (u *FinancingUcase) SyncFromCBS(ctx context.Context, apps []domain.FinancingApplication) error {
 	return u.financingRepo.SyncFromCBS(ctx, apps)
+}
+
+func (u *FinancingUcase) FetchFromCBS(ctx context.Context) ([]domain.FinancingApplication, error) {
+	if u.cbsClient == nil {
+		return nil, errors.New("CBS client not configured")
+	}
+
+	financings, err := u.cbsClient.GetFinancings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert CBS data to domain models
+	apps := make([]domain.FinancingApplication, 0)
+	for _, f := range financings {
+		app := domain.FinancingApplication{
+			CustomerName:      f.CustomerName,
+			CustomerNIK:       f.CustomerNIK,
+			FinancingAmount:   int64(f.FinancingAmount),
+			CollateralType:    f.CollateralType,
+			CollateralDetails: f.CollateralDetails,
+			Status:            f.Status,
+			SyncedAt:          time.Now(),
+		}
+		apps = append(apps, app)
+	}
+
+	return apps, nil
 }
 
 type LegalOrderUcase struct {
