@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -16,11 +17,19 @@ import (
 	esign "github.com/e-notary-bprs/backend/pkg/esign"
 )
 
+const (
+	// MaxFailedLogins: akun dikunci setelah 5x salah password beruntun.
+	MaxFailedLogins = 5
+	// LockoutDuration: lama kunci akun.
+	LockoutDuration = 15 * time.Minute
+)
+
 var (
 	ErrOrderNotFound = errors.New("legal order not found")
 	ErrInvalidStatus = errors.New("invalid status transition")
 	ErrSLAOverdue    = errors.New("SLA deadline exceeded")
 	ErrInvalidRole   = errors.New("invalid user role")
+	ErrAccountLocked = errors.New("account locked")
 )
 
 type AuthUcase struct {
@@ -56,9 +65,29 @@ func (u *AuthUcase) Login(ctx context.Context, email, password string) (*domain.
 	if err != nil {
 		return nil, errors.New("invalid email or password")
 	}
-	if !user.IsActive || !auth.CheckPassword(user.PasswordHash, password) {
+	if !user.IsActive {
 		return nil, errors.New("invalid email or password")
 	}
+	if user.LockedUntil != nil {
+		if remain := time.Until(*user.LockedUntil); remain > 0 {
+			return nil, fmt.Errorf("%w: coba lagi dalam %d menit", ErrAccountLocked, int(remain.Minutes())+1)
+		}
+	}
+	if !auth.CheckPassword(user.PasswordHash, password) {
+		attempts := user.FailedLoginAttempts + 1
+		var lockedUntil *time.Time
+		if attempts >= MaxFailedLogins {
+			t := time.Now().Add(LockoutDuration)
+			lockedUntil = &t
+			attempts = 0
+		}
+		_ = u.userRepo.RecordFailedLogin(ctx, user.ID, attempts, lockedUntil)
+		if lockedUntil != nil {
+			return nil, fmt.Errorf("%w: 5x salah password, coba lagi dalam 15 menit", ErrAccountLocked)
+		}
+		return nil, errors.New("invalid email or password")
+	}
+	_ = u.userRepo.ResetLoginAttempts(ctx, user.ID)
 	return user, nil
 }
 

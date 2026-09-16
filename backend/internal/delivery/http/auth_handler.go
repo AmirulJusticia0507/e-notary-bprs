@@ -56,6 +56,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	user, err := h.authUsecase.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
+		if errors.Is(err, usecase.ErrAccountLocked) {
+			response.Error(c, http.StatusLocked, err.Error())
+			return
+		}
 		response.Error(c, http.StatusUnauthorized, err.Error())
 		return
 	}

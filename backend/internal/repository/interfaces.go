@@ -16,6 +16,8 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (*domain.User, error)
 	List(ctx context.Context) ([]domain.User, error)
 	Update(ctx context.Context, user *domain.User) error
+	RecordFailedLogin(ctx context.Context, id int64, attempts int, lockedUntil *time.Time) error
+	ResetLoginAttempts(ctx context.Context, id int64) error
 }
 
 type NotaryRepository interface {
